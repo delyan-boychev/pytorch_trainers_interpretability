@@ -1,2 +1,2 @@
-from .basic_trainer import *
+from .trainers import *
 from .attack import *
