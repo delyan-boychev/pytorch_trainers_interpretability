@@ -107,8 +107,6 @@ class AdversarialTrainer:
                 for b, (X, y) in enumerate(tepoch):
                     tepoch.set_description(f"Epoch {i}")
                     X = X.to(self.device)
-                    if self.normalizer is not None:
-                        X = self.normalizer(X)
                     y = y.to(self.device)
                     self.optimizer.zero_grad()
                     adv_ex = self.attacker(X, y)
