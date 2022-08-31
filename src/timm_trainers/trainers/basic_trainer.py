@@ -149,6 +149,7 @@ class BasicTrainer:
             if self.scheduler is not None:
                 self.scheduler.step()
             if acc > best_acc:
+                best_acc = acc
                 torch.save({
                         'epoch': i,
                         'model_state_dict': self.model.state_dict(),
