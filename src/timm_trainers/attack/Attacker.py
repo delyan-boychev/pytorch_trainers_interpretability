@@ -40,11 +40,13 @@ class Attacker:
                 output = self.model(adv_X)
             loss = self.criterion(output, y)
             loss.backward()
+            grads = adv_X.grad.detach().clone()
+            adv_X.grad.zero_()
             if best_loss is None or best_loss < loss.item():
                 best_loss = loss.item()
                 best_X = adv_X.clone().detach()
                 iter_no_change = -1
-            adv_X = attack_step.step(adv_X, adv_X.grad.detach().clone())
+            adv_X = attack_step.step(adv_X, grads)
             adv_X = attack_step.project(adv_X)
             iter_no_change +=1
         return best_X

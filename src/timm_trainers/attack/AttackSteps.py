@@ -20,16 +20,16 @@ class L2Step(AttackStep):
         g_norm = torch.norm(grad.view(grad.shape[0], -1), dim=1).view(-1, *([1]*l))
         scaled_g = grad / (g_norm + 1e-10)
         return X + scaled_g * self.lr
-        return new_X
     def project(self, X):
         delta = X - self.orig_X
         delta_norm = delta.renorm(p=2, dim=0, maxnorm=self.epsilon)
         new_X = torch.clamp(self.orig_X+delta_norm, 0, 1)
         return new_X
     def random_restart(self, X):
-        pert = torch.rand_like(X)
-        new_X = self.project(self.orig_X + pert)
-        return new_X
+        l = len(X.shape) - 1
+        rp = torch.randn_like(X)
+        rp_norm = rp.view(rp.shape[0], -1).norm(dim=1).view(-1, *([1]*l))
+        return torch.clamp(X + self.epsilon * rp / (rp_norm + 1e-10), 0, 1)
 class LinfStep(AttackStep):
     def project(self, X):
         delta = X - self.orig_X
