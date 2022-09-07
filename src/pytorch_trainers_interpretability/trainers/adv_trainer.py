@@ -1,11 +1,12 @@
 import torch.nn as nn
 import torch
-import functools
 import timm
 from ..attack import Attacker, AttackSteps
 from tqdm import tqdm
 from torchvision import transforms
 from torch.utils import data
+import functools
+import matplotlib.pyplot as plt
 
 optimizers = {
     "Adam": functools.partial(torch.optim.Adam),
@@ -14,12 +15,20 @@ optimizers = {
 schedulers = {
     "CosineAnnealingLR": functools.partial(torch.optim.lr_scheduler.CosineAnnealingLR, T_max=200),
     "ExponentialLR": functools.partial(torch.optim.lr_scheduler.ExponentialLR, gamma=0.9),
-    "StepLR": functools.partial(torch.optim.lr_scheduler.StepLR, step_size=20, gamma=0.1)
+    "StepLR": functools.partial(torch.optim.lr_scheduler.StepLR, step_size=20, gamma=0.1),
+    "OneCycleLR": functools.partial(torch.optim.lr_scheduler.OneCycleLR, max_lr=0.01)
 }
-class BasicTrainer:
-    def __init__(self, model="resnet18", pretrained=False, lr_scheduler=None, criterion=nn.CrossEntropyLoss(), num_classes=10, lr=0.001, epochs=100, adv_step=AttackSteps.L2Step, adv_iter=20, adv_epsilon=0.5, optimizer="Adam", weight_decay=0.0, trainset=None, testset=None, batch_size=20, transforms_train=transforms.Compose([transforms.ToTensor()]), transforms_test=transforms.Compose([transforms.ToTensor()]), input_normalizer=None, resume_path=None, save_path="./"):
+
+class AdversarialTrainer:
+    def __init__(self, model="resnet18", pretrained=False, criterion=nn.CrossEntropyLoss(),
+    num_classes=10, lr=0.001, epochs=100,
+    adv_step=AttackSteps.L2Step, adv_iter=20, adv_epsilon=0.5,
+    optimizer="Adam", lr_scheduler=None, weight_decay=0.0,
+    trainset=None, testset=None, batch_size=20,
+    transforms_train=transforms.Compose([transforms.ToTensor()]), transforms_test=transforms.Compose([transforms.ToTensor()]), input_normalizer=None,
+    resume_path=None, save_plot=True, save_path="./"):
         if isinstance(model, str):
-            self.model = timm.create_model(model_name=model, pretrained=pretrained, num_classes=num_classes, drop_rate=0.2)
+            self.model = timm.create_model(model_name=model, pretrained=pretrained, num_classes=num_classes)
         elif isinstance(model, nn.Module):
             self.model = model
         else:
@@ -37,11 +46,11 @@ class BasicTrainer:
             if not isinstance(lr_scheduler, str) or lr_scheduler not in schedulers:
                 raise Exception("Non valid learning rate scheduler")
             self.scheduler = schedulers[lr_scheduler](optimizer=self.optimizer)
-        #self.l2_lambda = l2_lambda
         self.save_path = save_path
         self.epochs = epochs
         self.epoch=0
         self.loss = 0
+        self.save_plot = save_plot
         self.attacker = Attacker(model=self.model, epsilon=adv_epsilon, attack_step=adv_step, num_iter=adv_iter, tqdm=False)
         if not isinstance(trainset, data.Dataset):
             raise Exception("Not valid train loader")
@@ -54,7 +63,7 @@ class BasicTrainer:
         trainset.transform = transforms_train
         testset.transform = transforms_test
         self.trainloader = data.DataLoader(dataset=trainset, batch_size=batch_size, shuffle=True, num_workers=2)
-        self.testloader = data.DataLoader(dataset=testset, batch_size=batch_size, shuffle=False, num_workers=2)
+        self.testloader = data.DataLoader(dataset=testset, batch_size=batch_size, shuffle=True, num_workers=2)
         if input_normalizer is not None:
             if not isinstance(input_normalizer, transforms.Normalize):
                 raise Exception("Non valid input normalizer")
@@ -68,7 +77,7 @@ class BasicTrainer:
             self.optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
             print(f"Model resumed: Epoch {checkpoint['epoch']}")
             self.epoch = checkpoint['epoch']+1
-    def eval(self):
+    def eval_nat(self):
         self.model.eval()
         accuracy = 0.0
         total = 0.0
@@ -76,7 +85,7 @@ class BasicTrainer:
         with torch.no_grad():
             with tqdm(self.testloader, unit="batch") as tepoch:
                 for b, data in enumerate(tepoch):
-                    tepoch.set_description(f"Val")
+                    tepoch.set_description(f"Nat Val")
                     images, labels = data
                     images = images.to(self.device)
                     if self.normalizer is not None:
@@ -89,7 +98,7 @@ class BasicTrainer:
                     accuracy += (predicted == labels).sum().item()
                     running_loss += loss.item()
                     tepoch.set_postfix(loss=(running_loss/(b+1)), accuracy=(100 * accuracy/total))
-        return (100 * accuracy/total)
+            return (100 * accuracy/total), (running_loss/(b+1))
     def eval_adv(self):
         self.model.eval()
         accuracy = 0.0
@@ -111,11 +120,17 @@ class BasicTrainer:
                 accuracy += (predicted == labels).sum().item()
                 running_loss += loss.item()
                 tepoch.set_postfix(loss=(running_loss/(b+1)), accuracy=(100 * accuracy/total))
-        return (100 * accuracy/total)
+        return (100 * accuracy/total), (running_loss/(b+1))
     def get_model(self):
         return self.model
     def __call__(self):
         best_acc = -10
+        accs_test_nat = []
+        losses_test_nat = []
+        accs_test_adv = []
+        losses_test_adv = []
+        accs_train = []
+        losses_train = []
         for i in range(self.epoch, self.epochs):
             self.model.train()
             running_loss = 0.0
@@ -125,28 +140,31 @@ class BasicTrainer:
                 for b, (X, y) in enumerate(tepoch):
                     tepoch.set_description(f"Epoch {i}")
                     X = X.to(self.device)
-                    if self.normalizer is not None:
-                        X = self.normalizer(X)
                     y = y.to(self.device)
                     self.optimizer.zero_grad()
-                    outputs = self.model(X)
+                    adv_ex = self.attacker(X, y)
+                    if self.normalizer is not None:
+                        adv_ex = self.normalizer(adv_ex)
+                    outputs = self.model(adv_ex)
                     loss = self.criterion(outputs, y)
-                    """if self.l2_lambda != 0:
-                        l2_reg = torch.tensor(0.).to(self.device)
-                        for param in self.model.parameters():
-                            l2_reg += torch.norm(param)
-                        loss += self.l2_lambda * l2_reg
-                        """
                     predictions = outputs.argmax(dim=1, keepdim=True).squeeze()
                     total += y.size(0)
                     accuracy += (predictions == y).sum().item()
                     running_loss += loss.item()
                     loss.backward()
                     self.optimizer.step()
-                    self.optimizer.zero_grad()
                     tepoch.set_postfix(loss=(running_loss/(b+1)), accuracy=(100 * accuracy/total))
-            acc = self.eval()
-            if self.scheduler is not None:
+            acc_test_nat, loss_test_nat = self.eval_nat()
+            acc_test_adv, loss_test_adv = self.eval_adv()
+            acc = (acc_test_nat + acc_test_adv)/2
+            acc_train, loss_train = (100 * accuracy/total), (running_loss/(b+1))
+            accs_test_nat.append(acc_test_nat)
+            losses_test_nat.append(loss_test_nat)
+            accs_test_adv.append(acc_test_adv)
+            losses_test_adv.append(loss_test_adv)
+            accs_train.append(acc_train)
+            losses_train.append(loss_train)
+            if self.scheduler is not None :
                 self.scheduler.step()
             if acc > best_acc:
                 best_acc = acc
@@ -154,6 +172,23 @@ class BasicTrainer:
                         'epoch': i,
                         'model_state_dict': self.model.state_dict(),
                         'optimizer_state_dict': self.optimizer.state_dict(),
-                        'loss': running_loss,
+                        'loss': (running_loss/(b+1)),
                         }, f"{self.save_path}/best.pt")
+        if self.save_plot  is True:
+            iters = [*range(1, len(losses_train)+1)]
+            plt.plot(iters, losses_test_nat, 'g-', label="Test loss natural")
+            plt.plot(iters, losses_test_adv, 'r-', label="Test loss adversarial")
+            plt.plot(iters, losses_train, 'b-', label="Train loss")
+            plt.legend()
+            plt.xlabel('Epoch')
+            plt.ylabel('Loss')
+            plt.savefig(f"{self.save_path}/loss.pdf")
+            plt.clf()
+            plt.plot(iters, accs_test_nat, 'g-', label="Test accuracy nat")
+            plt.plot(iters, accs_test_adv, 'r-', label="Test accuracy adv")
+            plt.plot(iters, accs_train, 'b-', label="Train accuracy")
+            plt.legend()
+            plt.ylabel('Accuracy (%)')
+            plt.xlabel('Epoch')
+            plt.savefig(f"{self.save_path}/accuracy.pdf")
         
