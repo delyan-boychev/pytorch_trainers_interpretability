@@ -3,12 +3,15 @@ from tqdm import tqdm
 from ...attack import Attacker
 
 class AccEvaluator:
-    def __init__(self, model, criterion, testloader, adv_step, adv_iter, adv_eps, normalizer=None):
+    def __init__(self, model, criterion, testloader, device, adv_step, adv_iter, adv_eps, normalizer=None):
         self.model = model
         self.criterion = criterion
         self.testloader = testloader
-        self.attacker = Attacker(self.model, num_iter=adv_iter, epsilon=adv_eps, attack_step=adv_step)
+        self.attacker = Attacker(self.model, num_iter=adv_iter, epsilon=adv_eps, attack_step=adv_step, tqdm=False)
         self.normalizer = normalizer
+        if self.normalizer is not None:
+            self.attacker.normalizer = self.normalizer
+        self.device = device
     def eval_nat(self):
         self.model.eval()
         accuracy = 0.0
@@ -37,8 +40,8 @@ class AccEvaluator:
         total = 0.0
         running_loss = 0.0
         with tqdm(self.testloader, unit="batch") as tepoch:
+            tepoch.set_description(f"Adv Val")
             for b, data in enumerate(tepoch):
-                tepoch.set_description(f"Adv Val")
                 images, labels = data
                 images = images.to(self.device)
                 labels = labels.to(self.device)

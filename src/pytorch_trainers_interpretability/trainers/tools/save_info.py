@@ -8,9 +8,9 @@ class SaveInfo:
         self.save_path = save_path
         self.best_comp_acc = -1
         self.best_test_acc = -1
-        self.curr_comp_acc = -1
         self.acc_train = []
         self.loss_train = []
+        self.to_save_model = False
         self.acc_test = []
         self.loss_test = []
         if adv_train == True:
@@ -19,26 +19,27 @@ class SaveInfo:
             self.best_adv_acc = -1
     def append_train(self, acc, loss):
         self.acc_train.append(acc)
-        self.loss_train(loss)
+        self.loss_train.append(loss)
     def append_test(self, acc, loss, acc_adv=None, loss_adv=None):
         self.acc_test.append(acc)
-        self.loss_test(loss)
+        self.loss_test.append(loss)
         if self.best_test_acc < acc:
                 self.best_test_acc = acc
         compare_acc = acc
         if hasattr(self, "acc_test_adv"):
             self.acc_test_adv.append(acc_adv)
-            self.loss_test_adv(loss_adv)
+            self.loss_test_adv.append(loss_adv)
             if self.best_adv_acc < acc_adv:
                 self.best_adv_acc = acc_adv
             compare_acc += acc_adv
             compare_acc /= 2
         if self.best_comp_acc < compare_acc:
             self.best_comp_acc = compare_acc
-            self.curr_comp_acc = compare_acc
+            self.to_save_model = True
     def save_model(self, model_state_dict, epoch, loss, optimizer_state_dict):
+        self.to_save_model = False
         save = {"model_state_dict": model_state_dict, "epoch": epoch, "loss":loss, "optimizer_state_dict": optimizer_state_dict}
-        torch.save(os.path.join(self.save_path, "best.pt"))
+        torch.save(save, os.path.join(self.save_path, "best.pt"))
     def save_loss_plot(self):
         iters = [*range(1, len(self.loss_train)+1)]
         plt.plot(iters, self.loss_test, 'r-', label="Test loss natural")

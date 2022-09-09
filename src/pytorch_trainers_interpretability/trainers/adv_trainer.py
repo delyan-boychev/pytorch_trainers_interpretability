@@ -74,7 +74,7 @@ class AdversarialTrainer:
             else:
                 self.attacker.normalizer = input_normalizer
         self.normalizer = input_normalizer
-        self.acc_eval = AccEvaluator(model=self.model, criterion=self.criterion, testloader=self.testloader, adv_step=adv_step, adv_iter=adv_iter, adv_eps=adv_epsilon, normalizer=self.normalizer)
+        self.acc_eval = AccEvaluator(model=self.model, criterion=self.criterion, device=self.device, testloader=self.testloader, adv_step=adv_step, adv_iter=adv_iter, adv_eps=adv_epsilon, normalizer=self.normalizer)
         self.backward = Backward(self.model, self.criterion, self.optimizer)
         print(f"Model created on device {self.device}")
         if resume_path is not None:
@@ -108,13 +108,15 @@ class AdversarialTrainer:
                     accuracy += curr_acc
                     total += length
                     tepoch.set_postfix(loss=(running_loss/(b+1)), accuracy=(100 * accuracy/total))
-            self.save_info.append_test(self.eval_nat() + self.eval_adv())
+            acc_test, loss_test = self.eval_nat()
+            acc_test_adv, loss_test_adv = self.eval_adv()
+            self.save_info.append_test(acc_test, loss_test, acc_test_adv, loss_test_adv)
             self.save_info.append_train((100 * accuracy/total), (running_loss/(b+1)))
             if self.scheduler is not None :
                 self.scheduler.step()
-            if self.save_info.curr_comp_acc > self.save_info.best_comp_acc:
+            if self.save_info.to_save_model:
                 self.save_info.save_model((self.model.state_dict(), i, (running_loss/(b+1)), self.optimizer.state_dict()))
-        self.save_info.save_train_info()    
+            self.save_info.save_train_info()    
         if self.save_plot  is True:
                self.save_info.save_acc_plot()
                self.save_info.save_loss_plot()

@@ -73,10 +73,8 @@ class BasicTrainer:
         if input_normalizer is not None:
             if not isinstance(input_normalizer, transforms.Normalize):
                 raise Exception("Non valid input normalizer")
-            else:
-                self.attacker.normalizer = input_normalizer
         self.normalizer = input_normalizer
-        self.acc_eval = AccEvaluator(model=self.model, criterion=self.criterion, testloader=self.testloader, adv_step=adv_step, adv_iter=adv_iter, adv_eps=adv_epsilon, normalizer=self.normalizer)
+        self.acc_eval = AccEvaluator(model=self.model, criterion=self.criterion, device=self.device, testloader=self.testloader, adv_step=adv_step, adv_iter=adv_iter, adv_eps=adv_epsilon, normalizer=self.normalizer)
         self.backward = Backward(self.model, self.criterion, self.optimizer)
         print(f"Model created on device {self.device}")
         if resume_path is not None:
@@ -118,7 +116,7 @@ class BasicTrainer:
             if self.scheduler is not None:
                 if not isinstance(self.scheduler, torch.optim.lr_scheduler.OneCycleLR):
                     self.scheduler.step()
-            if self.save_info.curr_comp_acc > self.save_info.best_comp_acc:
+            if self.save_info.to_save_model:
                 self.save_info.save_model((self.model.state_dict(), i, (running_loss/(b+1)), self.optimizer.state_dict()))
             self.save_info.save_train_info()    
         if self.save_plot  is True:
