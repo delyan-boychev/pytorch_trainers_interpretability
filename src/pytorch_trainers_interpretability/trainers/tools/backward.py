@@ -12,7 +12,7 @@ class Backward:
         predictions = outputs.argmax(dim=1, keepdim=True).squeeze()
         length = y.size(0)
         curr_acc = (predictions == y).sum().item()
-        curr_loss += loss.item()
+        curr_loss = loss.item()
         loss.backward()
         nn.utils.clip_grad_value_(self.model.parameters(), 0.1)
         self.optimizer.step()

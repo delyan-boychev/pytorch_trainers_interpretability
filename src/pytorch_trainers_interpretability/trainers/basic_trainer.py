@@ -99,8 +99,8 @@ class BasicTrainer:
             accuracy = 0.0
             total = 0
             with tqdm(self.trainloader, unit="batch") as tepoch:
+                tepoch.set_description(f"Epoch {i}")
                 for b, (X, y) in enumerate(tepoch):
-                    tepoch.set_description(f"Epoch {i}")
                     X = X.to(self.device)
                     if self.normalizer is not None:
                         X = self.normalizer(X)
