@@ -1,3 +1,8 @@
+"""
+This EesNet architectures work only on CIFAR.
+They are taken from this GitHub repository - https://github.com/kuangliu/pytorch-cifar
+"""
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -96,21 +101,13 @@ class ResNet(nn.Module):
         return out
 
 
-def ResNet18():
+def ResNet18_cifar():
     return ResNet(BasicBlock, [2, 2, 2, 2])
 
 
-def ResNet34():
+def ResNet34_cifar():
     return ResNet(BasicBlock, [3, 4, 6, 3])
 
 
-def ResNet50():
+def ResNet50_cifar():
     return ResNet(Bottleneck, [3, 4, 6, 3])
-
-
-def ResNet101():
-    return ResNet(Bottleneck, [3, 4, 23, 3])
-
-
-def ResNet152():
-    return ResNet(Bottleneck, [3, 8, 36, 3])
