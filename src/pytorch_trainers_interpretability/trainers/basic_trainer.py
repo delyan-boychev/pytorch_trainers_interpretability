@@ -6,7 +6,9 @@ from ..attack import Attacker, AttackSteps
 from tqdm import tqdm
 from torchvision import transforms
 from torch.utils import data
-import matplotlib.pyplot as plt
+from .tools import Backward, SaveInfo, AccEvaluator
+import os
+
 
 optimizers = {
     "Adam": functools.partial(torch.optim.Adam),
@@ -41,12 +43,14 @@ class BasicTrainer:
             raise Exception("Non valid optimizer")
         self.optimizer = optimizers[optimizer](params=self.model.parameters(), lr=lr, weight_decay=weight_decay)
         self.scheduler = None
+        if not os.path.exists(save_path):
+            raise Exception("Save path not exists")
         self.save_path = save_path
         self.epochs = epochs
         self.epoch=0
         self.loss = 0
         self.save_plot = save_plot
-        self.attacker = Attacker(model=self.model, epsilon=adv_epsilon, attack_step=adv_step, num_iter=adv_iter, tqdm=False)
+        self.save_info = SaveInfo(self.save_path, adv_train=False)
         if not isinstance(trainset, data.Dataset):
             raise Exception("Not valid train loader")
         if not isinstance(testset, data.Dataset):
@@ -72,65 +76,23 @@ class BasicTrainer:
             else:
                 self.attacker.normalizer = input_normalizer
         self.normalizer = input_normalizer
+        self.acc_eval = AccEvaluator(model=self.model, criterion=self.criterion, testloader=self.testloader, adv_step=adv_step, adv_iter=adv_iter, adv_eps=adv_epsilon, normalizer=self.normalizer)
+        self.backward = Backward(self.model, self.criterion, self.optimizer)
         print(f"Model created on device {self.device}")
         if resume_path is not None:
             checkpoint = torch.load(resume_path, map_location=self.device)
             self.model.load_state_dict(checkpoint['model_state_dict'])
-            self.optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+            if "optimizer_state_dics" in checkpoint:
+                self.optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
             print(f"Model resumed: Epoch {checkpoint['epoch']}")
             self.epoch = checkpoint['epoch']+1
     def eval(self):
-        self.model.eval()
-        accuracy = 0.0
-        total = 0.0
-        running_loss = 0.0
-        with torch.no_grad():
-            with tqdm(self.testloader, unit="batch") as tepoch:
-                for b, data in enumerate(tepoch):
-                    tepoch.set_description(f"Val")
-                    images, labels = data
-                    images = images.to(self.device)
-                    if self.normalizer is not None:
-                        images = self.normalizer(images)
-                    labels = labels.to(self.device)
-                    outputs = self.model(images)
-                    loss = self.criterion(outputs, labels)
-                    _, predicted = torch.max(outputs.data, 1)
-                    total += labels.size(0)
-                    accuracy += (predicted == labels).sum().item()
-                    running_loss += loss.item()
-                    tepoch.set_postfix(loss=(running_loss/(b+1)), accuracy=(100 * accuracy/total))
-        return (100 * accuracy/total), (running_loss/(b+1))
+        return self.acc_eval.eval_nat()
     def eval_adv(self):
-        self.model.eval()
-        accuracy = 0.0
-        total = 0.0
-        running_loss = 0.0
-        with tqdm(self.testloader, unit="batch") as tepoch:
-            for b, data in enumerate(tepoch):
-                tepoch.set_description(f"Adv Val")
-                images, labels = data
-                images = images.to(self.device)
-                labels = labels.to(self.device)
-                adv_ex = self.attacker(images, labels)
-                if self.normalizer is not None:
-                    adv_ex = self.normalizer(adv_ex)
-                outputs = self.model(adv_ex)
-                loss = self.criterion(outputs, labels)
-                _, predicted = torch.max(outputs.data, 1)
-                total += labels.size(0)
-                accuracy += (predicted == labels).sum().item()
-                running_loss += loss.item()
-                tepoch.set_postfix(loss=(running_loss/(b+1)), accuracy=(100 * accuracy/total))
-        return (100 * accuracy/total), (running_loss/(b+1))
+        return self.acc_eval.eval_adv()
     def get_model(self):
         return self.model
     def __call__(self):
-        best_acc = -10
-        accs_test = []
-        losses_test = []
-        accs_train = []
-        losses_train = []
         for i in range(self.epoch, self.epochs):
             self.model.train()
             running_loss = 0.0
@@ -143,57 +105,23 @@ class BasicTrainer:
                     if self.normalizer is not None:
                         X = self.normalizer(X)
                     y = y.to(self.device)
-                    self.optimizer.zero_grad()
-                    outputs = self.model(X)
-                    loss = self.criterion(outputs, y)
-                    """if self.l2_lambda != 0:
-                        l2_reg = torch.tensor(0.).to(self.device)
-                        for param in self.model.parameters():
-                            l2_reg += torch.norm(param)
-                        loss += self.l2_lambda * l2_reg
-                        """
-                    predictions = outputs.argmax(dim=1, keepdim=True).squeeze()
-                    total += y.size(0)
-                    accuracy += (predictions == y).sum().item()
-                    running_loss += loss.item()
-                    loss.backward()
-                    nn.utils.clip_grad_value_(self.model.parameters(), 0.1)
-                    self.optimizer.step()
-                    self.optimizer.zero_grad()
+                    curr_loss, curr_acc, length = self.backward(X, y)
+                    running_loss += curr_loss
+                    accuracy += curr_acc
+                    total += length
                     tepoch.set_postfix(loss=(running_loss/(b+1)), accuracy=(100 * accuracy/total))
                     if self.scheduler is not None:
                         if isinstance(self.scheduler, torch.optim.lr_scheduler.OneCycleLR):
                             self.scheduler.step()
-            acc_test, loss_test = self.eval()
-            acc_train, loss_train = (100 * accuracy/total), (running_loss/(b+1))
-            accs_test.append(acc_test)
-            losses_test.append(loss_test)
-            accs_train.append(acc_train)
-            losses_train.append(loss_train)
+            self.save_info.append_test(self.eval())
+            self.save_info.append_train((100 * accuracy/total), (running_loss/(b+1)))
             if self.scheduler is not None:
                 if not isinstance(self.scheduler, torch.optim.lr_scheduler.OneCycleLR):
                     self.scheduler.step()
-            if acc_test > best_acc:
-                best_acc = acc_test
-                torch.save({
-                        'epoch': i,
-                        'model_state_dict': self.model.state_dict(),
-                        'optimizer_state_dict': self.optimizer.state_dict(),
-                        'loss': (running_loss/(b+1)),
-                        }, f"{self.save_path}/best.pt")
+            if self.save_info.curr_comp_acc > self.save_info.best_comp_acc:
+                self.save_info.save_model((self.model.state_dict(), i, (running_loss/(b+1)), self.optimizer.state_dict()))
+            self.save_info.save_train_info()    
         if self.save_plot  is True:
-                iters = [*range(1, len(losses_train)+1)]
-                plt.plot(iters, losses_test, 'r-', label="Test loss")
-                plt.plot(iters, losses_train, 'b-', label="Train loss")
-                plt.legend()
-                plt.xlabel('Epoch')
-                plt.ylabel('Loss')
-                plt.savefig(f"{self.save_path}/loss.pdf")
-                plt.clf()
-                plt.plot(iters, accs_test, 'r-', label="Test accuracy")
-                plt.plot(iters, accs_train, 'b-', label="Train accuracy")
-                plt.legend()
-                plt.ylabel('Accuracy (%)')
-                plt.xlabel('Epoch')
-                plt.savefig(f"{self.save_path}/accuracy.pdf")
+               self.save_info.save_acc_plot()
+               self.save_info.save_loss_plot()
         
