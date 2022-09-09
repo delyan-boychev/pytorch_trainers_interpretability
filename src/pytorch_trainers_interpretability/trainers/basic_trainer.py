@@ -111,13 +111,14 @@ class BasicTrainer:
                     if self.scheduler is not None:
                         if isinstance(self.scheduler, torch.optim.lr_scheduler.OneCycleLR):
                             self.scheduler.step()
-            self.save_info.append_test(self.eval())
+            acc_test, loss_test = self.eval()
+            self.save_info.append_test(acc_test, loss_test)
             self.save_info.append_train((100 * accuracy/total), (running_loss/(b+1)))
             if self.scheduler is not None:
                 if not isinstance(self.scheduler, torch.optim.lr_scheduler.OneCycleLR):
                     self.scheduler.step()
             if self.save_info.to_save_model:
-                self.save_info.save_model((self.model.state_dict(), i, (running_loss/(b+1)), self.optimizer.state_dict()))
+                self.save_info.save_model(self.model.state_dict(), i, (running_loss/(b+1)), self.optimizer.state_dict())
             self.save_info.save_train_info()    
         if self.save_plot  is True:
                self.save_info.save_acc_plot()

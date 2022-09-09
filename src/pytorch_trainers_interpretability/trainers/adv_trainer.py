@@ -103,7 +103,7 @@ class AdversarialTrainer:
                     adv_ex = self.attacker(X, y)
                     if self.normalizer is not None:
                         adv_ex = self.normalizer(adv_ex)
-                    curr_loss, curr_acc, length = self.backward(X, y)
+                    curr_loss, curr_acc, length = self.backward(adv_ex, y)
                     running_loss += curr_loss
                     accuracy += curr_acc
                     total += length
@@ -115,7 +115,7 @@ class AdversarialTrainer:
             if self.scheduler is not None :
                 self.scheduler.step()
             if self.save_info.to_save_model:
-                self.save_info.save_model((self.model.state_dict(), i, (running_loss/(b+1)), self.optimizer.state_dict()))
+                self.save_info.save_model(self.model.state_dict(), i, (running_loss/(b+1)), self.optimizer.state_dict())
             self.save_info.save_train_info()    
         if self.save_plot  is True:
                self.save_info.save_acc_plot()

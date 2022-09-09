@@ -63,7 +63,7 @@ class SaveInfo:
         plt.savefig(os.path.join(self.save_path, "accuracy.pdf"))
         plt.clf()
     def save_train_info(self):
-        info = {"acc_train": self.acc_train, "loss_train": self.loss_test, "acc_test": self.acc_test, "loss_test": self.loss_test, "best_test_acc": self.best_test_acc}
+        info = {"acc_train": self.acc_train, "loss_train": self.loss_train, "acc_test": self.acc_test, "loss_test": self.loss_test, "best_test_acc": self.best_test_acc}
         if hasattr(self, "acc_test_adv"):
             info["best_comp_acc"] = self.best_comp_acc
             info["best_adv_acc"] = self.best_adv_acc
