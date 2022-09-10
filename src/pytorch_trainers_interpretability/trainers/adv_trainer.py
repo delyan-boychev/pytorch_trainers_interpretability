@@ -116,8 +116,8 @@ class AdversarialTrainer:
                 self.scheduler.step()
             if self.save_info.to_save_model:
                 self.save_info.save_model(self.model.state_dict(), i, (running_loss/(b+1)), self.optimizer.state_dict())
-            self.save_info.save_train_info()    
-        if self.save_plot  is True:
+            self.save_info.save_train_info()
+            if self.save_plot  is True:
                self.save_info.save_acc_plot()
                self.save_info.save_loss_plot()
         
