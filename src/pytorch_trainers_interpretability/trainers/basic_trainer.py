@@ -18,7 +18,8 @@ schedulers = {
     "CosineAnnealingLR": functools.partial(torch.optim.lr_scheduler.CosineAnnealingLR, T_max=200),
     "ExponentialLR": functools.partial(torch.optim.lr_scheduler.ExponentialLR, gamma=0.9),
     "StepLR": functools.partial(torch.optim.lr_scheduler.StepLR, step_size=20, gamma=0.1),
-    "OneCycleLR": functools.partial(torch.optim.lr_scheduler.OneCycleLR, max_lr=0.01)
+    "OneCycleLR": functools.partial(torch.optim.lr_scheduler.OneCycleLR, max_lr=0.01),
+    "ReduceLROnPlateau": functools.partial(torch.optim.lr_scheduler.ReduceLROnPlateau, mode="min")
 }
 class BasicTrainer:
     def __init__(self, model="resnet18", pretrained=False, criterion=nn.CrossEntropyLoss(),
@@ -33,14 +34,14 @@ class BasicTrainer:
         elif isinstance(model, nn.Module):
             self.model = model
         else:
-            raise Exception("Non valid model")
+            raise Exception("Invalid model")
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         self.model.to(self.device)
         if not isinstance(criterion, nn.modules.loss._Loss):
-            raise Exception("Non valid criterion")
+            raise Exception("Invalid criterion")
         self.criterion = criterion
         if not isinstance(optimizer, str) or optimizer not in optimizers:
-            raise Exception("Non valid optimizer")
+            raise Exception("Invalid optimizer")
         self.optimizer = optimizers[optimizer](params=self.model.parameters(), lr=lr, weight_decay=weight_decay)
         self.scheduler = None
         if not os.path.exists(save_path):
@@ -65,14 +66,14 @@ class BasicTrainer:
         self.testloader = data.DataLoader(dataset=testset, batch_size=batch_size, shuffle=False, num_workers=2)
         if lr_scheduler is not None:
             if not isinstance(lr_scheduler, str) or lr_scheduler not in schedulers:
-                raise Exception("Non valid learning rate scheduler")
+                raise Exception("Invalid learning rate scheduler")
             if lr_scheduler is "OneCycleLR":
                 self.scheduler = schedulers[lr_scheduler](optimizer=self.optimizer, steps_per_epoch=len(self.trainloader), epochs=epochs)
             else:
                 self.scheduler = schedulers[lr_scheduler](optimizer=self.optimizer)
         if input_normalizer is not None:
             if not isinstance(input_normalizer, transforms.Normalize):
-                raise Exception("Non valid input normalizer")
+                raise Exception("Invalid input normalizer")
         self.normalizer = input_normalizer
         self.acc_eval = AccEvaluator(model=self.model, criterion=self.criterion, device=self.device, testloader=self.testloader, adv_step=adv_step, adv_iter=adv_iter, adv_eps=adv_epsilon, normalizer=self.normalizer)
         self.backward = Backward(self.model, self.criterion, self.optimizer)

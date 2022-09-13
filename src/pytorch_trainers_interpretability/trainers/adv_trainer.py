@@ -33,19 +33,19 @@ class AdversarialTrainer:
         elif isinstance(model, nn.Module):
             self.model = model
         else:
-            raise Exception("Non valid model")
+            raise Exception("Invalid model")
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         self.model.to(self.device)
         if not isinstance(criterion, nn.modules.loss._Loss):
-            raise Exception("Non valid criterion")
+            raise Exception("Invalid criterion")
         self.criterion = criterion
         if not isinstance(optimizer, str) or optimizer not in optimizers:
-            raise Exception("Non valid optimizer")
+            raise Exception("Invalid optimizer")
         self.optimizer = optimizers[optimizer](params=self.model.parameters(), lr=lr, weight_decay=weight_decay)
         self.scheduler = None
         if lr_scheduler is not None:
             if not isinstance(lr_scheduler, str) or lr_scheduler not in schedulers:
-                raise Exception("Non valid learning rate scheduler")
+                raise Exception("Invalid learning rate scheduler")
             self.scheduler = schedulers[lr_scheduler](optimizer=self.optimizer)
         if not os.path.exists(save_path):
             raise Exception("Save path not exists")
@@ -70,7 +70,7 @@ class AdversarialTrainer:
         self.testloader = data.DataLoader(dataset=testset, batch_size=batch_size, shuffle=True, num_workers=2)
         if input_normalizer is not None:
             if not isinstance(input_normalizer, transforms.Normalize):
-                raise Exception("Non valid input normalizer")
+                raise Exception("Invalid input normalizer")
             else:
                 self.attacker.normalizer = input_normalizer
         self.normalizer = input_normalizer

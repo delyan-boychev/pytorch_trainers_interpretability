@@ -24,7 +24,7 @@ class SaveInfo:
         self.acc_test.append(acc)
         self.loss_test.append(loss)
         if self.best_test_acc < acc:
-                self.best_test_acc = acc
+            self.best_test_acc = acc
         compare_acc = acc
         if hasattr(self, "acc_test_adv"):
             self.acc_test_adv.append(acc_adv)
@@ -44,7 +44,7 @@ class SaveInfo:
         iters = [*range(1, len(self.loss_train)+1)]
         plt.plot(iters, self.loss_test, 'r-', label="Test loss natural")
         if hasattr(self, "acc_test_adv"):
-             plt.plot(iters, self.loss_test_adv, 'g-', label="Test loss adversarial")
+            plt.plot(iters, self.loss_test_adv, 'g-', label="Test loss adversarial")
         plt.plot(iters, self.loss_train, 'b-', label="Train loss")
         plt.legend()
         plt.xlabel('Epoch')
@@ -55,7 +55,7 @@ class SaveInfo:
         iters = [*range(1, len(self.acc_train)+1)]
         plt.plot(iters, self.acc_test, 'r-', label="Test accuracy natural")
         if hasattr(self, "acc_test_adv"):
-             plt.plot(iters, self.acc_test_adv, 'g-', label="Test accuracy adversarial")
+            plt.plot(iters, self.acc_test_adv, 'g-', label="Test accuracy adversarial")
         plt.plot(iters, self.acc_train, 'b-', label="Train accuracy")
         plt.legend()
         plt.xlabel('Epoch')

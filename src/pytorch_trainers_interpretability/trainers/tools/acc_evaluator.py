@@ -21,16 +21,16 @@ class AccEvaluator:
             with tqdm(self.testloader, unit="batch") as tepoch:
                 for b, data in enumerate(tepoch):
                     tepoch.set_description(f"Val")
-                    images, labels = data
-                    images = images.to(self.device)
+                    X, y = data
+                    X = X.to(self.device)
                     if self.normalizer is not None:
-                        images = self.normalizer(images)
-                    labels = labels.to(self.device)
-                    outputs = self.model(images)
-                    loss = self.criterion(outputs, labels)
+                        X = self.normalizer(X)
+                    y = y.to(self.device)
+                    outputs = self.model(X)
+                    loss = self.criterion(outputs, y)
                     _, predicted = torch.max(outputs.data, 1)
-                    total += labels.size(0)
-                    accuracy += (predicted == labels).sum().item()
+                    total += y.size(0)
+                    accuracy += (predicted == y).sum().item()
                     running_loss += loss.item()
                     tepoch.set_postfix(loss=(running_loss/(b+1)), accuracy=(100 * accuracy/total))
         return (100 * accuracy/total), (running_loss/(b+1))
@@ -42,17 +42,17 @@ class AccEvaluator:
         with tqdm(self.testloader, unit="batch") as tepoch:
             tepoch.set_description(f"Adv Val")
             for b, data in enumerate(tepoch):
-                images, labels = data
-                images = images.to(self.device)
-                labels = labels.to(self.device)
-                adv_ex = self.attacker(images, labels)
+                X, y = data
+                X = X.to(self.device)
+                y = y.to(self.device)
+                adv_ex = self.attacker(X, y)
                 if self.normalizer is not None:
                     adv_ex = self.normalizer(adv_ex)
                 outputs = self.model(adv_ex)
-                loss = self.criterion(outputs, labels)
+                loss = self.criterion(outputs, y)
                 _, predicted = torch.max(outputs.data, 1)
-                total += labels.size(0)
-                accuracy += (predicted == labels).sum().item()
+                total += y.size(0)
+                accuracy += (predicted == y).sum().item()
                 running_loss += loss.item()
                 tepoch.set_postfix(loss=(running_loss/(b+1)), accuracy=(100 * accuracy/total))
         return (100 * accuracy/total), (running_loss/(b+1))
