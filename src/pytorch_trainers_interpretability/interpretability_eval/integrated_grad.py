@@ -24,58 +24,56 @@ class IntegratedGrad:
     def _pred_grad(self, input, target_label_idx):
         gradients = []
         for inp in input:
-            inp = self._pre_processing(inp).requires_grad_(True)
+            inp = inp.requires_grad_(True)
             output = self.model(inp)
-            output = F.softmax(output, dim=1)
-            index = torch.ones((output.shape[0], 1), dtype=torch.int64) * target_label_idx
-            index = index.to(self.device)
-            output = output.gather(1, index)
+            output = F.softmax(output, dim=1)[0, target_label_idx]
             output.backward()
-            gradient = inp.grad[0]
+            gradient = inp.grad
             gradients.append(gradient)
         return torch.cat(gradients)
     def _generate_staturate_batches(self, input, baseline, steps):
-        return [baseline + (float(i) / steps) * (input - baseline) for i in range(0, steps + 1)]
+        return [baseline + a * (input - baseline) for a in np.linspace(0, 1, steps)]
     def _integrated_grads(self, input, target_label_idx, baseline, steps=50):
         scaled_inputs = self._generate_staturate_batches(input, baseline, steps)
         grads = self._pred_grad(scaled_inputs,target_label_idx)
-        avg_grads = torch.mean(grads[:-1], axis=0)
-        delta_X = (self._pre_processing(input) - self._pre_processing(baseline)).detach().squeeze(0)
-        integrated_grad = (delta_X * avg_grads).detach().cpu().numpy()
-        integrated_grad = np.transpose(integrated_grad, (1, 2, 0))
-        return integrated_grad
-    def get_attribution_mask(self, integrated_grad):
-        return np.sum(np.abs(integrated_grad), axis=-1)
+        integrated_grads= torch.mean(grads[:-1], axis=0)
+        delta_X = (input - baseline).detach().squeeze(0)
+        integrated_grads = (delta_X * integrated_grads).detach().cpu().numpy()
+        integrated_grads = np.transpose(integrated_grads, (1, 2, 0))
+        return integrated_grads
+    def _get_attribution_mask(self, integrated_grads):
+        grad_arr = np.average(np.abs(integrated_grads), axis=-1)
+        grad_arr /= np.quantile(grad_arr, 0.98)
+        grad_arr = np.clip(grad_arr, 0, 1)
+        return grad_arr
+    def img_attributions(self, grad, image, treshhold=0):
+        grad = self._get_attribution_mask(grad)
+        mask = np.zeros([image.shape[0], image.shape[1], 3])
+        mask[:, :, 1] = grad
+        mask[mask<treshhold] = 0
+        overlay = np.clip(image*0.7 + mask, 0, 1)
+        return mask, overlay
     def zero_baseline_integrated_grads(self, input, target_label_idx, steps=50):
-        baseline = np.zeros(input.shape)
+        input = self._pre_processing(input)
+        baseline = torch.zeros(input.shape).to(self.device)
         return self._integrated_grads(input, target_label_idx, baseline, steps)
-    def gausssian_noise_integrated_grads(self, input, target_label_idx, steps, num_random_trials, std=0.31622776601):
+    def gaussian_noise_integrated_grads(self, input, target_label_idx, steps, num_random_trials):
         all_intgrads = []
-
+        input = self._pre_processing(input)
         itr = tqdm(range(num_random_trials), unit="trial")
         for i in itr:
             integrated_grad = self._integrated_grads(input, target_label_idx, \
-                                                    baseline=np.random.normal(0, std, input.shape), steps=steps)
-            all_intgrads.append(integrated_grad)
-        avg_intgrads = np.average(np.array(all_intgrads), axis=0)
-        return avg_intgrads
-    def uniform_baseline_integrated_grads(self, input, target_label_idx, steps, num_random_trials):
-        all_intgrads = []
-
-        itr = tqdm(range(num_random_trials), unit="trial")
-        for i in itr:
-            integrated_grad = self._integrated_grads(input, target_label_idx, \
-                                                    baseline=np.random.uniform(input.shape), steps=steps)
+                                                    baseline=torch.normal(0, 0.4, input.shape).to(self.device), steps=steps)
             all_intgrads.append(integrated_grad)
         avg_intgrads = np.average(np.array(all_intgrads), axis=0)
         return avg_intgrads
     def random_baseline_integrated_grads(self, input, target_label_idx, steps, num_random_trials):
         all_intgrads = []
-
+        input = self._pre_processing(input)
         itr = tqdm(range(num_random_trials), unit="trial")
         for i in itr:
             integrated_grad = self._integrated_grads(input, target_label_idx, \
-                                                    baseline=np.random.random(input.shape), steps=steps)
+                                                    baseline=torch.rand(input.shape).to(self.device), steps=steps)
             all_intgrads.append(integrated_grad)
         avg_intgrads = np.average(np.array(all_intgrads), axis=0)
         return avg_intgrads
