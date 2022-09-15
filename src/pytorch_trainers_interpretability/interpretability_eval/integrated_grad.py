@@ -36,7 +36,8 @@ class IntegratedGrad:
     def _integrated_grads(self, input, target_label_idx, baseline, steps=50):
         scaled_inputs = self._generate_staturate_batches(input, baseline, steps)
         grads = self._pred_grad(scaled_inputs,target_label_idx)
-        integrated_grads= torch.mean(grads[:-1], axis=0)
+        grads = (grads[:-1] + grads[1:]) / 2.0
+        integrated_grads = torch.mean(grads, axis=0)
         delta_X = (input - baseline).detach().squeeze(0)
         integrated_grads = (delta_X * integrated_grads).detach().cpu().numpy()
         integrated_grads = np.transpose(integrated_grads, (1, 2, 0))

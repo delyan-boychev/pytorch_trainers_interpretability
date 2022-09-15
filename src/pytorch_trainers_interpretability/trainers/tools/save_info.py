@@ -4,8 +4,9 @@ import json
 import os
 
 class SaveInfo:
-    def __init__(self, save_path, adv_train=False):
+    def __init__(self, resume_path, save_path, adv_train=False):
         self.save_path = save_path
+        self.resume_path = resume_path
         self.best_comp_acc = -1
         self.best_test_acc = -1
         self.acc_train = []
@@ -36,9 +37,11 @@ class SaveInfo:
         if self.best_comp_acc < compare_acc:
             self.best_comp_acc = compare_acc
             self.to_save_model = True
-    def save_model(self, model_state_dict, epoch, loss, optimizer_state_dict):
+    def save_model(self, model_state_dict, epoch, loss, optimizer_state_dict, lr_scheduler_state_dict=None):
         self.to_save_model = False
-        save = {"model_state_dict": model_state_dict, "epoch": epoch, "loss":loss, "optimizer_state_dict": optimizer_state_dict}
+        save = {"model_state_dict": model_state_dict, "epoch": epoch, "loss": loss, "optimizer_state_dict": optimizer_state_dict}
+        if lr_scheduler_state_dict is not None:
+            save["lr_scheduler_state_dict"] = lr_scheduler_state_dict
         torch.save(save, os.path.join(self.save_path, "best.pt"))
     def save_loss_plot(self):
         iters = [*range(1, len(self.loss_train)+1)]
@@ -62,10 +65,21 @@ class SaveInfo:
         plt.ylabel('Accuracy(%)')
         plt.savefig(os.path.join(self.save_path, "accuracy.pdf"))
         plt.clf()
-    def save_train_info(self):
-        info = {"acc_train": self.acc_train, "loss_train": self.loss_train, "acc_test": self.acc_test, "loss_test": self.loss_test, "best_test_acc": self.best_test_acc}
+    def load_train_info(self):
+        with open(os.path.join(self.resume_path, "train_info.json"), 'r') as fp:
+            data = json.load(fp)
+        self.acc_train = data["acc_train"]
+        self.loss_train = data["loss_train"]
+        self.acc_test =  data["acc_test"]
+        self.loss_test = data["loss_test"]
+        self.best_comp_acc = data["best_comp_acc"]
         if hasattr(self, "acc_test_adv"):
-            info["best_comp_acc"] = self.best_comp_acc
+            self.best_adv_acc = data["best_adv_acc"]
+            self.acc_test_adv = data["acc_test_adv"]
+            self.loss_test_adv = data["loss_test_adv"]
+    def save_train_info(self):
+        info = {"acc_train": self.acc_train, "loss_train": self.loss_train, "acc_test": self.acc_test, "loss_test": self.loss_test, "best_test_acc": self.best_test_acc, "best_comp_acc": self.best_comp_acc}
+        if hasattr(self, "acc_test_adv"):
             info["best_adv_acc"] = self.best_adv_acc
             info["acc_test_adv"] = self.acc_test_adv
             info["loss_test_adv"] = self.loss_test_adv

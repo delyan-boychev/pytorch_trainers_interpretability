@@ -51,7 +51,7 @@ class BasicTrainer:
         self.epoch=0
         self.loss = 0
         self.save_plot = save_plot
-        self.save_info = SaveInfo(self.save_path, adv_train=False)
+        self.save_info = SaveInfo(save_path=self.save_path, resume_path=resume_path, adv_train=False)
         if not isinstance(trainset, data.Dataset):
             raise Exception("Not valid train loader")
         if not isinstance(testset, data.Dataset):
@@ -79,10 +79,12 @@ class BasicTrainer:
         self.backward = Backward(self.model, self.criterion, self.optimizer)
         print(f"Model created on device {self.device}")
         if resume_path is not None:
-            checkpoint = torch.load(resume_path, map_location=self.device)
+            self.save_info.load_train_info()
+            checkpoint = torch.load(os.path.join(resume_path, "best.pt"), map_location=self.device)
             self.model.load_state_dict(checkpoint['model_state_dict'])
-            if "optimizer_state_dics" in checkpoint:
-                self.optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+            self.optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+            if "lr_scheduler_state_dict" in checkpoint:
+                self.scheduler.load_state_dict(checkpoint["lr_scheduler_state_dict"])
             print(f"Model resumed: Epoch {checkpoint['epoch']}")
             self.epoch = checkpoint['epoch']+1
     def eval(self):
@@ -119,7 +121,8 @@ class BasicTrainer:
                 if not isinstance(self.scheduler, torch.optim.lr_scheduler.OneCycleLR):
                     self.scheduler.step()
             if self.save_info.to_save_model:
-                self.save_info.save_model(self.model.state_dict(), i, (running_loss/(b+1)), self.optimizer.state_dict())
+                lr_scheduler_state_dict = self.scheduler.state_dict() if self.scheduler is not None else None
+                self.save_info.save_model(self.model.state_dict(), i, (running_loss/(b+1)), self.optimizer.state_dict(), lr_scheduler_state_dict=lr_scheduler_state_dict)
             self.save_info.save_train_info()
             if self.save_plot  is True:
                self.save_info.save_acc_plot()
