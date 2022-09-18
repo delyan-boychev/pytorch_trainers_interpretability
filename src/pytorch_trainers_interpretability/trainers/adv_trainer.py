@@ -54,7 +54,7 @@ class AdversarialTrainer:
         self.epoch=0
         self.loss = 0
         self.save_plot = save_plot
-        self.save_info = SaveInfo(self.save_path, adv_train=True)
+        self.save_info = SaveInfo(save_path=self.save_path, resume_path=resume_path, adv_train=True)
         self.attacker = Attacker(model=self.model, epsilon=adv_epsilon, attack_step=adv_step, num_iter=adv_iter, tqdm=False)
         if not isinstance(trainset, data.Dataset):
             raise Exception("Not valid train loader")
