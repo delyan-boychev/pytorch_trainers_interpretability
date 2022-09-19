@@ -78,7 +78,7 @@ class AdversarialTrainer:
         self.backward = Backward(self.model, self.criterion, self.optimizer)
         print(f"Model created on device {self.device}")
         if resume_path is not None:
-            checkpoint = torch.load(resume_path, map_location=self.device)
+            checkpoint = torch.load(os.path.join(resume_path, "best.pt"), map_location=self.device)
             self.model.load_state_dict(checkpoint['model_state_dict'])
             self.optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
             if "lr_scheduler_state_dict" in checkpoint:
