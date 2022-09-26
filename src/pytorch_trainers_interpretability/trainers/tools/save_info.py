@@ -65,18 +65,18 @@ class SaveInfo:
         plt.ylabel('Accuracy(%)')
         plt.savefig(os.path.join(self.save_path, "accuracy.pdf"))
         plt.clf()
-    def load_train_info(self):
+    def load_train_info(self, epoch):
         with open(os.path.join(self.resume_path, "train_info.json"), 'r') as fp:
             data = json.load(fp)
-        self.acc_train = data["acc_train"]
-        self.loss_train = data["loss_train"]
-        self.acc_test =  data["acc_test"]
-        self.loss_test = data["loss_test"]
+        self.acc_train = data["acc_train"][:epoch+1]
+        self.loss_train = data["loss_train"][:epoch+1]
+        self.acc_test =  data["acc_test"][:epoch+1]
+        self.loss_test = data["loss_test"][:epoch+1]
         self.best_comp_acc = data["best_comp_acc"]
         if hasattr(self, "acc_test_adv"):
-            self.best_adv_acc = data["best_adv_acc"]
-            self.acc_test_adv = data["acc_test_adv"]
-            self.loss_test_adv = data["loss_test_adv"]
+            self.best_adv_acc = data["best_adv_acc"][:epoch+1]
+            self.acc_test_adv = data["acc_test_adv"][:epoch+1]
+            self.loss_test_adv = data["loss_test_adv"][:epoch+1]
     def save_train_info(self):
         info = {"acc_train": self.acc_train, "loss_train": self.loss_train, "acc_test": self.acc_test, "loss_test": self.loss_test, "best_test_acc": self.best_test_acc, "best_comp_acc": self.best_comp_acc}
         if hasattr(self, "acc_test_adv"):
