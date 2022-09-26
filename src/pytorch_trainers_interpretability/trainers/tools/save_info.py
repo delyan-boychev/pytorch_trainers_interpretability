@@ -74,7 +74,7 @@ class SaveInfo:
         self.loss_test = data["loss_test"][:epoch+1]
         self.best_comp_acc = data["best_comp_acc"]
         if hasattr(self, "acc_test_adv"):
-            self.best_adv_acc = data["best_adv_acc"][:epoch+1]
+            self.best_adv_acc = data["best_adv_acc"]
             self.acc_test_adv = data["acc_test_adv"][:epoch+1]
             self.loss_test_adv = data["loss_test_adv"][:epoch+1]
     def save_train_info(self):
