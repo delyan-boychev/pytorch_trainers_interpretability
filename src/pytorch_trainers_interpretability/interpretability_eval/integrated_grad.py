@@ -4,6 +4,7 @@ import torch.nn.functional as F
 import numpy as np
 import matplotlib.pylab as plt
 from tqdm import tqdm
+from ._visualization import Visualize, pil_image
 
 class IntegratedGrad:
     def __init__(self, model, normalizer=None):
@@ -19,18 +20,12 @@ class IntegratedGrad:
         inp_tensor = torch.from_numpy(inp).float().unsqueeze(0).to(self.device)
         return inp_tensor
     def _pred_grad(self, input, target_label_idx):
-        gradients = []
-        outputs = []
-        for i in range(1, input.shape[0]):
-            inp = input[i-1:i].clone().requires_grad_(True)
-            output = self.model(inp)
-            output = F.softmax(output, dim=-1)[:, target_label_idx]
-            output.backward()
-            gradient = inp.grad.detach().clone()
-            inp.grad.zero_()
-            outputs.append(output.item())
-            gradients.append(gradient)
-        return torch.cat(gradients, axis=0), outputs
+        inp = input.clone().requires_grad_(True)
+        outputs = self.model(inp)
+        outputs = F.softmax(outputs, dim=-1)[:, target_label_idx]
+        outputs.backward(torch.ones(outputs.shape).to(self.device))
+        gradients = inp.grad.detach().clone()
+        return gradients, outputs.detach().clone().cpu().numpy()
     def _generate_staturate_batches(self, input, baseline, steps):
         alphas = torch.linspace(0.0, 1.0, steps+1).to(self.device)
         alphas = alphas[:, None, None, None]
@@ -49,6 +44,7 @@ class IntegratedGrad:
             gradient, pred = self._pred_grad(batch, target_label_idx)
             predictions.append(pred)
             gradients.append(gradient)
+        predictions = np.hstack(predictions)
         gradients = torch.cat(gradients, axis=0)
         if self.normalizer is not None:
             input = self.normalizer(input)
@@ -59,18 +55,8 @@ class IntegratedGrad:
         integrated_grads = (delta_X*integrated_grads).squeeze(0).detach().cpu().numpy()
         integrated_grads = np.transpose(integrated_grads, (1, 2, 0))
         return integrated_grads
-    def _get_attribution_mask(self, integrated_grads):
-        grad_arr = np.average(np.abs(integrated_grads), axis=-1)
-        grad_arr /= np.quantile(grad_arr, 0.97)
-        grad_arr = np.clip(grad_arr, 0, 1)
-        return grad_arr
-    def img_attributions(self, grad, image, treshhold=0):
-        grad = self._get_attribution_mask(grad)
-        mask = np.zeros([image.shape[0], image.shape[1], 3])
-        mask[:, :, 1] = grad
-        mask[mask<treshhold] = 0
-        overlay = np.clip(image*0.7 + mask, 0, 1)
-        return mask, overlay
+    def visualization(self, grad, image):
+        return pil_image(Visualize(grad*255, image*255))
     def black_baseline_integrated_grads(self, input, target_label_idx, steps=50, batch_size=30):
         input = self._to_tensor(input)
         baseline = torch.zeros(input.shape).to(self.device)
