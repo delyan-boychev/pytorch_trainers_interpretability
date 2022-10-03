@@ -54,30 +54,38 @@ class IntegratedGrad:
         delta_X = (input - baseline).to(self.device)
         integrated_grads = (delta_X*integrated_grads).squeeze(0).detach().cpu().numpy()
         integrated_grads = np.transpose(integrated_grads, (1, 2, 0))
-        return integrated_grads
-    def visualization(self, grad, image):
-        return pil_image(Visualize(grad*255, image*255))
+        completeness = np.abs(np.sum(integrated_grads) - (predictions[-1] - predictions[0]))
+        return integrated_grads, completeness
+    def visualization(self, grad, image, treshold=0, mask_mode=False, overlay=True):
+        return pil_image(Visualize(grad, (image*255).astype(np.uint8)))
     def black_baseline_integrated_grads(self, input, target_label_idx, steps=50, batch_size=30):
         input = self._to_tensor(input)
         baseline = torch.zeros(input.shape).to(self.device)
-        return self._integrated_grads(input, target_label_idx, baseline, steps, batch_size)
+        integrated_grad, cm = self._integrated_grads(input, target_label_idx, baseline, steps, batch_size)
+        return integrated_grad
     def gaussian_noise_integrated_grads(self, input, target_label_idx, steps, num_random_trials, batch_size=30):
         input = self._to_tensor(input)
         all_intgrads = []
         itr = tqdm(range(num_random_trials), unit="trial")
+        completeness = []
         for i in itr:
-            integrated_grad = self._integrated_grads(input, target_label_idx, \
+            integrated_grad, cm = self._integrated_grads(input, target_label_idx, \
                                                     baseline=torch.normal(0, 0.4, input.shape).to(self.device), steps=steps, batch_size=batch_size)
             all_intgrads.append(integrated_grad)
+            completeness.append(cm)
+            itr.set_postfix(completeness=np.average(completeness))
         avg_intgrads = np.average(np.array(all_intgrads), axis=0)
         return avg_intgrads
     def random_baseline_integrated_grads(self, input, target_label_idx, steps, num_random_trials, batch_size=30):
         input = self._to_tensor(input)
         all_intgrads = []
         itr = tqdm(range(num_random_trials), unit="trial")
+        completeness = []
         for i in itr:
-            integrated_grad = self._integrated_grads(input, target_label_idx, \
+            integrated_grad, cm = self._integrated_grads(input, target_label_idx, \
                                                     baseline=torch.rand(input.shape).to(self.device), steps=steps, batch_size=batch_size)
             all_intgrads.append(integrated_grad)
+            completeness.append(cm)
+            itr.set_postfix(completeness=np.average(completeness))
         avg_intgrads = np.average(np.array(all_intgrads), axis=0)
         return avg_intgrads

@@ -15,7 +15,10 @@ setup(
         "torch>=1.12.1",
         "tqdm",
         "numpy",
-        "matplotlib",
+        "matplotlib>=3.5.3",
         "timm",
+        "shap",
+        "lime",
+        "scikit-image"
     ],
 )

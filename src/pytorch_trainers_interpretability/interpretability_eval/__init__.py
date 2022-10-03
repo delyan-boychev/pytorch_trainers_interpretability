@@ -1,2 +1,3 @@
-from .shap_eval import *
+from .shap import *
 from .integrated_grad import *
+from .lime import *

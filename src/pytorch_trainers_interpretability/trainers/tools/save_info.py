@@ -37,12 +37,15 @@ class SaveInfo:
         if self.best_comp_acc < compare_acc:
             self.best_comp_acc = compare_acc
             self.to_save_model = True
-    def save_model(self, model_state_dict, epoch, loss, optimizer_state_dict, lr_scheduler_state_dict=None):
+    def save_model(self, model_state_dict, epoch, loss, optimizer_state_dict, lr_scheduler_state_dict=None, best=False):
         self.to_save_model = False
         save = {"model_state_dict": model_state_dict, "epoch": epoch, "loss": loss, "optimizer_state_dict": optimizer_state_dict}
         if lr_scheduler_state_dict is not None:
             save["lr_scheduler_state_dict"] = lr_scheduler_state_dict
-        torch.save(save, os.path.join(self.save_path, "best.pt"))
+        filename = "checkpoint.pt"
+        if best == True:
+            filename = "best.pt"
+        torch.save(save, os.path.join(self.save_path, filename))
     def save_loss_plot(self):
         iters = [*range(1, len(self.loss_train)+1)]
         plt.plot(iters, self.loss_test, 'r-', label="Test loss natural")

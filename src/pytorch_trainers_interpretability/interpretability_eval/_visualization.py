@@ -188,7 +188,7 @@ def Outlines(attributions, percentage=90,
 
 
 def Overlay(attributions, image):
-  return np.clip(0.2 * image + 0.8 * attributions, 0, 255)
+   return np.clip(0.2 * image + attributions, 0, 255)
 
 
 def pil_image(x):

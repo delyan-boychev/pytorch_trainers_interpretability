@@ -78,7 +78,7 @@ class AdversarialTrainer:
         self.backward = Backward(self.model, self.criterion, self.optimizer)
         print(f"Model created on device {self.device}")
         if resume_path is not None:
-            checkpoint = torch.load(os.path.join(resume_path, "best.pt"), map_location=self.device)
+            checkpoint = torch.load(os.path.join(resume_path, "checkpoint.pt"), map_location=self.device)
             self.save_info.load_train_info(checkpoint['epoch'])
             self.model.load_state_dict(checkpoint['model_state_dict'])
             self.optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
@@ -117,9 +117,10 @@ class AdversarialTrainer:
             self.save_info.append_train((100 * accuracy/total), (running_loss/(b+1)))
             if self.scheduler is not None :
                 self.scheduler.step()
+            lr_scheduler_state_dict = self.scheduler.state_dict() if self.scheduler is not None else None
+            self.save_info.save_model(self.model.state_dict(), i, (running_loss/(b+1)), self.optimizer.state_dict(), lr_scheduler_state_dict=lr_scheduler_state_dict, best=False)
             if self.save_info.to_save_model:
-                lr_scheduler_state_dict = self.scheduler.state_dict() if self.scheduler is not None else None
-                self.save_info.save_model(self.model.state_dict(), i, (running_loss/(b+1)), self.optimizer.state_dict(), lr_scheduler_state_dict=lr_scheduler_state_dict)
+                self.save_info.save_model(self.model.state_dict(), i, (running_loss/(b+1)), self.optimizer.state_dict(), lr_scheduler_state_dict=lr_scheduler_state_dict, best=True)
             self.save_info.save_train_info()
             if self.save_plot  is True:
                self.save_info.save_acc_plot()
