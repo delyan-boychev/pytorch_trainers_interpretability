@@ -8,14 +8,11 @@ from ..attack import L2Step, Attacker
 import matplotlib.pyplot as plt
 
 class ShapEval:
-    def __init__(self, model=None, classes=None, normalizer=None):
+    def __init__(self, model=None, classes=None, normalizer=lambda x: x):
         if model is None or not isinstance(model, nn.Module):
             raise Exception("Invalid model")
         if classes is None or not isinstance(classes, list):
             raise Exception("Invalid classes")
-        if normalizer is not None:
-            if not isinstance(normalizer, transforms.Normalize):
-                raise Exception("Invalid normalizer")
         self.classes = classes
         self.normalizer = normalizer
         self.model = model
@@ -75,8 +72,7 @@ class ShapEval:
         background = images_background.to(self.device)
         test_X = eval_images.to(self.device)
         X_viz = test_X
-        if self.normalizer is not None:
-            test_X = self.normalizer(test_X)
+        test_X = self.normalizer(test_X)
         shap_values, indexes = self._shap_deep_explain(background, test_X)
         shap_values = [np.swapaxes(np.swapaxes(s, 2, 3), 1, -1) for s in shap_values]
         test_numpy = (np.swapaxes(np.swapaxes(X_viz.cpu().numpy(), 1, -1), 1, 2)  * 255).astype(np.uint8)
@@ -87,8 +83,7 @@ class ShapEval:
         background = attacker(background_images, backgeound_labels).to(self.device)
         test_X = attacker(eval_images, eval_labels).cpu()
         X_viz = test_X
-        if self.normalizer is not None:
-            test_X = self.normalizer(test_X)
+        test_X = self.normalizer(test_X)
         shap_values, indexes = self._shap_deep_explain(background, test_X)
         shap_values = [np.swapaxes(np.swapaxes(s, 2, 3), 1, -1) for s in shap_values]
         test_numpy = (np.swapaxes(np.swapaxes(X_viz.cpu().numpy(), 1, -1), 1, 2)  * 255).astype(np.uint8)

@@ -3,14 +3,13 @@ from tqdm import tqdm
 from ...attack import Attacker
 
 class AccEvaluator:
-    def __init__(self, model, criterion, testloader, device, adv_step, adv_iter, adv_eps, normalizer=None):
+    def __init__(self, model, criterion, testloader, device, adv_step, adv_iter, adv_eps, normalizer=lambda x: x):
         self.model = model
         self.criterion = criterion
         self.testloader = testloader
         self.attacker = Attacker(self.model, num_iter=adv_iter, epsilon=adv_eps, attack_step=adv_step, tqdm=False)
         self.normalizer = normalizer
-        if self.normalizer is not None:
-            self.attacker.normalizer = self.normalizer
+        self.attacker.normalizer = self.normalizer
         self.device = device
     def eval_nat(self):
         self.model.eval()
@@ -23,8 +22,7 @@ class AccEvaluator:
                     tepoch.set_description(f"Val")
                     X, y = data
                     X = X.to(self.device)
-                    if self.normalizer is not None:
-                        X = self.normalizer(X)
+                    X = self.normalizer(X)
                     y = y.to(self.device)
                     outputs = self.model(X)
                     loss = self.criterion(outputs, y)
@@ -46,8 +44,7 @@ class AccEvaluator:
                 X = X.to(self.device)
                 y = y.to(self.device)
                 adv_ex = self.attacker(X, y)
-                if self.normalizer is not None:
-                    adv_ex = self.normalizer(adv_ex)
+                adv_ex = self.normalizer(adv_ex)
                 outputs = self.model(adv_ex)
                 loss = self.criterion(outputs, y)
                 _, predicted = torch.max(outputs.data, 1)

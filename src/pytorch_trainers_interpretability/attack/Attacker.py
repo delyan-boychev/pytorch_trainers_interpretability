@@ -4,7 +4,7 @@ import torch
 from tqdm import tqdm
 
 class Attacker:
-    def __init__(self, model, num_iter=20, epsilon=8/255, attack_step=AttackSteps.LinfStep, lr=0.1, normalizer=None, restart=True, tqdm=True):
+    def __init__(self, model, num_iter=20, epsilon=8/255, attack_step=AttackSteps.LinfStep, lr=0.1, normalizer=lambda x: x, restart=True, tqdm=True):
         if not isinstance(model, nn.Module):
             raise("Not valid model")
         self.model = model
@@ -34,10 +34,7 @@ class Attacker:
             if iter_no_change > 10 and self.restart is True:
                 adv_X = attack_step.random_restart(adv_X)
             adv_X = adv_X.detach().clone().requires_grad_(True)
-            if self.normalizer is not None:
-                output = self.model(self.normalizer(adv_X))
-            else:
-                output = self.model(adv_X)
+            output = self.model(self.normalizer(adv_X))
             loss = self.criterion(output, y)
             loss.backward()
             grads = adv_X.grad.detach().clone()

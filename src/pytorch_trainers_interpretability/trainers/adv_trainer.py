@@ -26,7 +26,8 @@ class AdversarialTrainer:
     adv_step=AttackSteps.L2Step, adv_iter=20, adv_epsilon=0.5,
     optimizer="Adam", lr_scheduler=None, weight_decay=0.0,
     trainset=None, testset=None, batch_size=20,
-    transforms_train=transforms.Compose([transforms.ToTensor()]), transforms_test=transforms.Compose([transforms.ToTensor()]), input_normalizer=None,
+    transforms_train=transforms.Compose([transforms.ToTensor()]), transforms_test=transforms.Compose([transforms.ToTensor()]),
+    input_normalizer=lambda x: x,
     resume_path=None, save_plot=True, save_path="./"):
         if isinstance(model, str):
             self.model = timm.create_model(model_name=model, pretrained=pretrained, num_classes=num_classes)
@@ -68,11 +69,7 @@ class AdversarialTrainer:
         testset.transform = transforms_test
         self.trainloader = data.DataLoader(dataset=trainset, batch_size=batch_size, shuffle=True, num_workers=2)
         self.testloader = data.DataLoader(dataset=testset, batch_size=batch_size, shuffle=True, num_workers=2)
-        if input_normalizer is not None:
-            if not isinstance(input_normalizer, transforms.Normalize):
-                raise Exception("Invalid input normalizer")
-            else:
-                self.attacker.normalizer = input_normalizer
+        self.attacker.normalizer = input_normalizer
         self.normalizer = input_normalizer
         self.acc_eval = AccEvaluator(model=self.model, criterion=self.criterion, device=self.device, testloader=self.testloader, adv_step=adv_step, adv_iter=adv_iter, adv_eps=adv_epsilon, normalizer=self.normalizer)
         self.backward = Backward(self.model, self.criterion, self.optimizer)
@@ -104,8 +101,7 @@ class AdversarialTrainer:
                     X = X.to(self.device)
                     y = y.to(self.device)
                     adv_ex = self.attacker(X, y)
-                    if self.normalizer is not None:
-                        adv_ex = self.normalizer(adv_ex)
+                    adv_ex = self.normalizer(adv_ex)
                     curr_loss, curr_acc, length = self.backward(adv_ex, y)
                     running_loss += curr_loss
                     accuracy += curr_acc

@@ -7,12 +7,9 @@ from tqdm import tqdm
 from ._visualization import Visualize, pil_image
 
 class IntegratedGrad:
-    def __init__(self, model, normalizer=None):
+    def __init__(self, model, normalizer=lambda x: x):
         self.model = model
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-        if normalizer is not None:
-            if not isinstance(normalizer, transforms.Normalize):
-                raise Exception("Invalid normalizer")
         self.normalizer = normalizer
     def _to_tensor(self, inp):
         inp = np.array(inp)
@@ -39,16 +36,14 @@ class IntegratedGrad:
             start = i
             end = min(start+batch_size, steps)
             batch = scaled_inputs[start:end]
-            if self.normalizer is not None:
-                batch = self.normalizer(batch)
+            batch = self.normalizer(batch)
             gradient, pred = self._pred_grad(batch, target_label_idx)
             predictions.append(pred)
             gradients.append(gradient)
         predictions = np.hstack(predictions)
         gradients = torch.cat(gradients, axis=0)
-        if self.normalizer is not None:
-            input = self.normalizer(input)
-            baseline = self.normalizer(baseline)
+        input = self.normalizer(input)
+        baseline = self.normalizer(baseline)
         gradients = (gradients[:-1] + gradients[1:]) / 2.0
         integrated_grads = torch.mean(gradients, axis=0)
         delta_X = (input - baseline).to(self.device)

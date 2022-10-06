@@ -1,9 +1,8 @@
 """
-This EesNet architectures work only on CIFAR.
+This ResNet architectures work only on CIFAR.
 They are taken from this GitHub repository - https://github.com/kuangliu/pytorch-cifar
 """
 
-import torch
 import torch.nn as nn
 import torch.nn.functional as F
 

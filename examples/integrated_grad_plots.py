@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from textwrap import wrap
 
-def int_grads_compare_regular_robust(regular, robust, images, labels, classes, normalizer=None, treshold=0):
+def int_grads_compare_regular_robust(regular, robust, images, labels, classes, normalizer=lambda x: x, treshold=0):
     integrated_grad = IntegratedGrad(regular, normalizer=normalizer)
     integrated_grad2 = IntegratedGrad(robust, normalizer=normalizer)
     num_img = labels.shape[0]
@@ -24,8 +24,7 @@ def int_grads_compare_regular_robust(regular, robust, images, labels, classes, n
                 axs[1].set_title("Regular model", fontsize=40)
                 axs[2].set_title("Robust model", fontsize=40)
             img = images[k:k+1].cuda()
-            if normalizer is not None:
-                img = normalizer(img)
+            img = normalizer(img)
             pr = regular(img)
             pr2 = robust(img)
             image = images[k].cpu().permute(1, 2, 0).numpy()

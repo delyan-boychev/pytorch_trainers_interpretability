@@ -27,7 +27,8 @@ class BasicTrainer:
     adv_step=AttackSteps.L2Step, adv_iter=20, adv_epsilon=0.5,
     optimizer="Adam", lr_scheduler=None, weight_decay=0.0,
     trainset=None, testset=None, batch_size=20,
-    transforms_train=transforms.Compose([transforms.ToTensor()]), transforms_test=transforms.Compose([transforms.ToTensor()]), input_normalizer=None,
+    transforms_train=transforms.Compose([transforms.ToTensor()]), transforms_test=transforms.Compose([transforms.ToTensor()]),
+    input_normalizer=lambda x: x,
     resume_path=None, save_plot=True, save_path="./"):
         if isinstance(model, str):
             self.model = timm.create_model(model_name=model, pretrained=pretrained, num_classes=num_classes)
@@ -71,9 +72,6 @@ class BasicTrainer:
                 self.scheduler = schedulers[lr_scheduler](optimizer=self.optimizer, steps_per_epoch=len(self.trainloader), epochs=epochs)
             else:
                 self.scheduler = schedulers[lr_scheduler](optimizer=self.optimizer)
-        if input_normalizer is not None:
-            if not isinstance(input_normalizer, transforms.Normalize):
-                raise Exception("Invalid input normalizer")
         self.normalizer = input_normalizer
         self.acc_eval = AccEvaluator(model=self.model, criterion=self.criterion, device=self.device, testloader=self.testloader, adv_step=adv_step, adv_iter=adv_iter, adv_eps=adv_epsilon, normalizer=self.normalizer)
         self.backward = Backward(self.model, self.criterion, self.optimizer)
@@ -103,8 +101,7 @@ class BasicTrainer:
                 tepoch.set_description(f"Epoch {i}")
                 for b, (X, y) in enumerate(tepoch):
                     X = X.to(self.device)
-                    if self.normalizer is not None:
-                        X = self.normalizer(X)
+                    X = self.normalizer(X)
                     y = y.to(self.device)
                     curr_loss, curr_acc, length = self.backward(X, y)
                     running_loss += curr_loss
