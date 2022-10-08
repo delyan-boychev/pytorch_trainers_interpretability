@@ -77,7 +77,7 @@ class ShapEval:
         shap_values = [np.swapaxes(np.swapaxes(s, 2, 3), 1, -1) for s in shap_values]
         test_numpy = (np.swapaxes(np.swapaxes(X_viz.cpu().numpy(), 1, -1), 1, 2)  * 255).astype(np.uint8)
         index_names = np.vectorize(lambda x: self.classes[x])(indexes.cpu())
-        shap.plots.image(shap_values, test_numpy, true_labels=[self.classes[i] for i in labels.cpu().numpy()], labels=index_names)
+        return shap.plots.image(shap_values, test_numpy, true_labels=[self.classes[i] for i in labels.cpu().numpy()], labels=index_names, show=False)
     def adv_deep_exp(self, background_images, backgeound_labels, eval_images, eval_labels, attack_step=L2Step, num_iter=20, epsilon=0.5):
         attacker = Attacker(self.model, num_iter=num_iter, epsilon=epsilon, attack_step=attack_step, normalizer=self.normalizer)
         background = attacker(background_images, backgeound_labels).to(self.device)
@@ -88,4 +88,4 @@ class ShapEval:
         shap_values = [np.swapaxes(np.swapaxes(s, 2, 3), 1, -1) for s in shap_values]
         test_numpy = (np.swapaxes(np.swapaxes(X_viz.cpu().numpy(), 1, -1), 1, 2)  * 255).astype(np.uint8)
         index_names = np.vectorize(lambda x: self.classes[x])(indexes.cpu())
-        shap.plots.image(shap_values, test_numpy, true_labels=[self.classes[i] for i in eval_labels.cpu().numpy()], labels=index_names)
+        return shap.plots.image(shap_values, test_numpy, true_labels=[self.classes[i] for i in eval_labels.cpu().numpy()], labels=index_names, show=False)

@@ -8,7 +8,7 @@ import numpy as np
 
 
 class LimeEval:
-    def __init__(self, model, transform_pil, normalizer=None):
+    def __init__(self, model, normalizer=lambda x:x):
         self.model = model
         self.normalizer = normalizer
         self.explainer = lime_image.LimeImageExplainer(verbose = False)
@@ -18,7 +18,6 @@ class LimeEval:
     def _predict(self, input):
         self.model.eval()
         batch = torch.stack(tuple(self.normalizer(transforms.ToTensor()(i.astype(np.float32))) for i in input), dim=0)
-        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         batch = batch.to(self.device)
         logits = self.model(batch)
         probs = nn.functional.softmax(logits, dim=1)
