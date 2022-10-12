@@ -52,7 +52,6 @@ class ShapEval:
             img = img.to(self.device)
             output = self.model(img)
             return output
-        print(X[0].shape)
         masker = shap.maskers.Image("blur(128, 128)", X[0].shape)
         explainer = shap.Explainer(predict, masker, output_names=self.classes)
         return explainer(X, max_evals=1000, batch_size=50, outputs=shap.Explanation.argsort.flip[:4])
@@ -67,14 +66,14 @@ class ShapEval:
                 true_labels=labels)
     def _shap_deep_explain(self, background, X):
         ex = shap.DeepExplainer(self.model, background)
-        return ex.shap_values(X, ranked_outputs=4)
+        return ex.shap_values(X, ranked_outputs=10)
     def nat_deep_exp(self, images_background, eval_images, labels):
         background = images_background.to(self.device)
         test_X = eval_images.to(self.device)
         X_viz = test_X
         test_X = self.normalizer(test_X)
         shap_values, indexes = self._shap_deep_explain(background, test_X)
-        shap_values = [np.swapaxes(np.swapaxes(s, 2, 3), 1, -1) for s in shap_values]
+        shap_values = np.abs([np.swapaxes(np.swapaxes(s, 2, 3), 1, -1) for s in shap_values]).mean(0)
         test_numpy = (np.swapaxes(np.swapaxes(X_viz.cpu().numpy(), 1, -1), 1, 2)  * 255).astype(np.uint8)
         index_names = np.vectorize(lambda x: self.classes[x])(indexes.cpu())
         return shap.plots.image(shap_values, test_numpy, true_labels=[self.classes[i] for i in labels.cpu().numpy()], labels=index_names, show=False)

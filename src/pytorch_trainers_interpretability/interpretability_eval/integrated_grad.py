@@ -51,8 +51,8 @@ class IntegratedGrad:
         integrated_grads = np.transpose(integrated_grads, (1, 2, 0))
         completeness = np.abs(np.sum(integrated_grads) - (predictions[-1] - predictions[0]))
         return integrated_grads, completeness
-    def visualization(self, grad, image, treshold=0, mask_mode=False, overlay=True):
-        return pil_image(Visualize(grad, (image*255).astype(np.uint8)))
+    def visualization(self, grad, image, treshold=0):
+        return pil_image(Visualize(grad, (image*255).astype(np.uint8), clip_below_percentile=treshold))
     def black_baseline_integrated_grads(self, input, target_label_idx, steps=50, batch_size=30):
         input = self._to_tensor(input)
         baseline = torch.zeros(input.shape).to(self.device)

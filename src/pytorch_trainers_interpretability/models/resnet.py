@@ -4,7 +4,7 @@ import torch.nn.functional as F
 
 class Bottleneck(nn.Module):
     expansion = 4
-    def __init__(self, in_channels, out_channels, shortcut=nn.Sequential(), stride=1):
+    def __init__(self, in_channels, out_channels, shortcut=None, stride=1):
         super(Bottleneck, self).__init__()
         
         self.conv1 = nn.Conv2d(in_channels, out_channels, kernel_size=1, stride=1, padding=0, bias=False)
@@ -20,15 +20,18 @@ class Bottleneck(nn.Module):
         self.stride = stride
         
     def forward(self, x):
+        identity = x.clone()
         out = F.relu(self.bn1(self.conv1(x)))
         out = F.relu(self.bn2(self.conv2(out)))
         out = self.bn3(self.conv3(out))
-        out += self.shortcut(x)
+        if self.shortcut is not None:
+            identity = self.shortcut(identity)
+        out += identity
         out = F.relu(out)
         return out
 class BasicBlock(nn.Module):
     expansion = 1
-    def __init__(self, in_channels, out_channels, shortcut=nn.Sequential(), stride=1):
+    def __init__(self, in_channels, out_channels, shortcut=None, stride=1):
         super(BasicBlock, self).__init__()
         
         self.conv1 = nn.Conv2d(in_channels, out_channels, kernel_size=3, stride=stride, padding=0, bias=False)
@@ -40,9 +43,12 @@ class BasicBlock(nn.Module):
         self.stride = stride
         
     def forward(self, x):
+        identity = x.clone()
         out = F.relu(self.bn1(self.conv1(x)))
         out = self.bn2(self.conv2(out))
-        out += self.shortcut(x)
+        if self.shortcut is not None:
+            identity = self.shortcut(identity)
+        out += identity
         out = F.relu(out)
         
         return out
@@ -74,7 +80,7 @@ class ResNet(nn.Module):
         return out
         
     def _make_layer(self, ResBlock, blocks, planes, stride=1):
-        shortcut = nn.Sequential()
+        shortcut = None
         layers = []
         
         if stride != 1 or self.in_channels != planes*ResBlock.expansion:
