@@ -1,3 +1,8 @@
+# ---------------------------------------------------------------------------- #
+# An implementation of https://arxiv.org/pdf/1706.06083.pdf                    #
+# attack steps for Projected Gradient Descent                                  #
+# ---------------------------------------------------------------------------- #
+
 import torch
 import numpy as np
 

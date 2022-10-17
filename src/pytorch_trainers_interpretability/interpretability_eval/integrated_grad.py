@@ -1,3 +1,7 @@
+# ---------------------------------------------------------------------------- #
+# An implementation of https://arxiv.org/pdf/1703.01365.pdf                    #
+# and https://arxiv.org/abs/1908.06214                                         #
+# ---------------------------------------------------------------------------- #
 import torch
 import torchvision.transforms as transforms
 import torch.nn.functional as F
