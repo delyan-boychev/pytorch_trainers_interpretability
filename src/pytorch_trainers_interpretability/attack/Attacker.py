@@ -1,3 +1,7 @@
+# ---------------------------------------------------------------------------- #
+# An implementation of https://arxiv.org/pdf/1706.06083.pdf                    #
+# for Projected Gradient Descent                                               #
+# ---------------------------------------------------------------------------- #
 from . import AttackSteps
 import torch.nn as nn
 import torch
