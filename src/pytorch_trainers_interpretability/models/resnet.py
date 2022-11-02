@@ -1,6 +1,8 @@
 import torch.nn as  nn
 import torch.nn.functional as F
 
+from ..trainers.tools import FakeReLU, SequentialWithArgs
+
 
 class Bottleneck(nn.Module):
     expansion = 4
@@ -19,7 +21,7 @@ class Bottleneck(nn.Module):
         self.shortcut = shortcut
         self.stride = stride
         
-    def forward(self, x):
+    def forward(self, x, fake_relu=False):
         identity = x.clone()
         out = F.relu(self.bn1(self.conv1(x)))
         out = F.relu(self.bn2(self.conv2(out)))
@@ -27,6 +29,8 @@ class Bottleneck(nn.Module):
         if self.shortcut is not None:
             identity = self.shortcut(identity)
         out += identity
+        if fake_relu:
+            return FakeReLU.apply(out)
         out = F.relu(out)
         return out
 class BasicBlock(nn.Module):
@@ -67,17 +71,19 @@ class ResNet(nn.Module):
         self.layer4 = self._make_layer(ResBlock, layer_list[3], planes=512, stride=2)
         self.linear = nn.Linear(512*ResBlock.expansion, num_classes)
         
-    def forward(self, x):
+    def forward(self, x, fake_relu=False, with_latent=False):
         out = F.relu(self.bn1(self.conv1(x)))
         out = self.max_pool(out)
         out = self.layer1(out)
         out = self.layer2(out)
         out = self.layer3(out)
-        out = self.layer4(out)
+        out = self.layer4(out, fake_relu=fake_relu)
         out = F.adaptive_avg_pool2d(out, (1, 1))
         out = out.reshape(out.shape[0], -1)
-        out = self.linear(out)
-        return out
+        outf = self.linear(out)
+        if with_latent is True:
+            return outf, out
+        return outf
         
     def _make_layer(self, ResBlock, blocks, planes, stride=1):
         shortcut = None
@@ -95,7 +101,7 @@ class ResNet(nn.Module):
         for i in range(blocks-1):
             layers.append(ResBlock(self.in_channels, planes))
             
-        return nn.Sequential(*layers)
+        return SequentialWithArgs(*layers)
 
 
 def ResNet18(num_classes, channels=3):
