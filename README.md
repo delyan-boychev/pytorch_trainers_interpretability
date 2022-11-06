@@ -2,7 +2,7 @@
 
 _(Increasing Computer Vision Models Interpretability)_
 
-Contact: delyan.boychev05@gmail.com
+Contact: delyan.boychev05@gmail.com 
 
 With the perpetual increase of complexity of the state-of-the-art deep neural networks, it becomes more and more challenging to maintain their transparency. The scope of this work is to evaluate the effects of various techniques that have been shown to make computer vision models more explainable, such as adversarial training: to study their impacts on local and global interpretability and to compare their respective performances.
 
