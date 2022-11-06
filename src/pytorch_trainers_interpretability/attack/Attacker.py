@@ -40,7 +40,7 @@ class Attacker:
         iterat = range(self.num_iter)
         if self.tqdm is True:
             iterat = tqdm(iterat)
-        for i in range(self.num_iter):
+        for i in iterat:
             if iter_no_change > 10 and self.restart is True:
                 adv_X = attack_step.random_restart(adv_X)
             adv_X = adv_X.detach().clone().requires_grad_(True)
