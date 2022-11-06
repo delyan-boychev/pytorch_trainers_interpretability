@@ -7,7 +7,7 @@
 import torch.nn as  nn
 import torch.nn.functional as F
 
-from ..trainers.tools import FakeReLU, SequentialWithArgs
+from .tools import FakeReLU, SequentialWithArgs
 
 
 class Bottleneck(nn.Module):
@@ -52,13 +52,15 @@ class BasicBlock(nn.Module):
         self.shortcut = shortcut
         self.stride = stride
         
-    def forward(self, x):
+    def forward(self, x, fake_relu=False):
         identity = x.clone()
         out = F.relu(self.bn1(self.conv1(x)))
         out = self.bn2(self.conv2(out))
         if self.shortcut is not None:
             identity = self.shortcut(identity)
         out += identity
+        if fake_relu:
+            return FakeReLU.apply(out)
         out = F.relu(out)
         
         return out

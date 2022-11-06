@@ -8,6 +8,8 @@
 import torch.nn as nn
 import torch.nn.functional as F
 
+from .tools import FakeReLU, SequentialWithArgs
+
 
 class BasicBlock(nn.Module):
     expansion = 1
@@ -29,10 +31,12 @@ class BasicBlock(nn.Module):
                 nn.BatchNorm2d(self.expansion*planes)
             )
 
-    def forward(self, x):
+    def forward(self, x, fake_relu=False):
         out = F.relu(self.bn1(self.conv1(x)))
         out = self.bn2(self.conv2(out))
         out += self.shortcut(x)
+        if fake_relu:
+            return FakeReLU.apply(out)
         out = F.relu(out)
         return out
 
@@ -88,18 +92,20 @@ class ResNet(nn.Module):
         for stride in strides:
             layers.append(block(self.in_planes, planes, stride))
             self.in_planes = planes * block.expansion
-        return nn.Sequential(*layers)
+        return SequentialWithArgs(*layers)
 
-    def forward(self, x):
+    def forward(self, x, with_latent=False, fake_relu=False):
         out = F.relu(self.bn1(self.conv1(x)))
         out = self.layer1(out)
         out = self.layer2(out)
         out = self.layer3(out)
-        out = self.layer4(out)
+        out = self.layer4(out, fake_relu=fake_relu)
         out = F.avg_pool2d(out, 4)
         out = out.view(out.size(0), -1)
-        out = self.linear(out)
-        return out
+        outf = self.linear(out)
+        if with_latent:
+            return outf, out
+        return outf
 
 
 def ResNet18_cifar():
