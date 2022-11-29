@@ -21,7 +21,7 @@ schedulers = {
     "OneCycleLR": functools.partial(torch.optim.lr_scheduler.OneCycleLR, max_lr=0.01),
     "ReduceLROnPlateau": functools.partial(torch.optim.lr_scheduler.ReduceLROnPlateau, mode="min")
 }
-class BasicTrainer:
+class StandardTrainer:
     def __init__(self, model="resnet18", pretrained=False, criterion=nn.CrossEntropyLoss(),
     num_classes=10, lr=0.001, epochs=100,
     adv_step=AttackSteps.L2Step, adv_iter=20, adv_epsilon=0.5,

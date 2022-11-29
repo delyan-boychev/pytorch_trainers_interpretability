@@ -23,7 +23,7 @@ class BasicBlock(nn.Module):
                                stride=1, padding=1, bias=False)
         self.bn2 = nn.BatchNorm2d(planes)
 
-        self.shortcut = nn.Sequential()
+        self.shortcut = None
         if stride != 1 or in_planes != self.expansion*planes:
             self.shortcut = nn.Sequential(
                 nn.Conv2d(in_planes, self.expansion*planes,
@@ -32,9 +32,12 @@ class BasicBlock(nn.Module):
             )
 
     def forward(self, x, fake_relu=False):
+        identity = x.clone()
         out = F.relu(self.bn1(self.conv1(x)))
         out = self.bn2(self.conv2(out))
-        out += self.shortcut(x)
+        if self.shortcut is not None:
+            identity = self.shortcut(identity)
+        out += identity
         if fake_relu:
             return FakeReLU.apply(out)
         out = F.relu(out)
@@ -55,7 +58,7 @@ class Bottleneck(nn.Module):
                                planes, kernel_size=1, bias=False)
         self.bn3 = nn.BatchNorm2d(self.expansion*planes)
 
-        self.shortcut = nn.Sequential()
+        self.shortcut = None
         if stride != 1 or in_planes != self.expansion*planes:
             self.shortcut = nn.Sequential(
                 nn.Conv2d(in_planes, self.expansion*planes,
@@ -64,10 +67,13 @@ class Bottleneck(nn.Module):
             )
 
     def forward(self, x):
+        identity = x.clone()
         out = F.relu(self.bn1(self.conv1(x)))
         out = F.relu(self.bn2(self.conv2(out)))
         out = self.bn3(self.conv3(out))
-        out += self.shortcut(x)
+        if self.shortcut is not None:
+            identity = self.shortcut(identity)
+        out += identity
         out = F.relu(out)
         return out
 

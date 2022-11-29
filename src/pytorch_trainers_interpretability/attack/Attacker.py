@@ -27,10 +27,11 @@ class Attacker:
             self.custom_loss = True
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         model.to(self.device)
-    def __call__(self, X, y, fake_relu=False, use_best=True, random_start=False):
+    def __call__(self, X, y, targeted=False, fake_relu=False, use_best=True, random_start=False):
         X = X.to(self.device)
         y = y.to(self.device)
         attack_step = self.attack_step(epsilon=self.epsilon, orig_X=X.clone().detach(), lr=self.lr, device=self.device)
+        m = -1 if targeted else 1
         if random_start:
             X = attack_step.random_restart(X)
         adv_X = X.requires_grad_(True).to(self.device)
@@ -40,6 +41,7 @@ class Attacker:
         iterat = range(self.num_iter)
         if self.tqdm is True:
             iterat = tqdm(iterat)
+        rn_loss = 0.0
         for i in iterat:
             if iter_no_change > 10 and self.restart is True:
                 adv_X = attack_step.random_restart(adv_X)
@@ -50,6 +52,10 @@ class Attacker:
                 output = self.model(self.normalizer(adv_X), fake_relu=fake_relu)
                 loss = self.criterion(output, y)
             loss = torch.mean(loss)
+            rn_loss += loss.item()
+            loss = m * loss
+            if self.tqdm:
+                iterat.set_postfix(loss=rn_loss/(i+1))
             loss.backward()
             grads = adv_X.grad.detach().clone()
             adv_X.grad.zero_()

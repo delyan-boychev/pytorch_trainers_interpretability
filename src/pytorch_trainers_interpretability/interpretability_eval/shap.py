@@ -32,7 +32,6 @@ class ShapEval:
         ]
         self.transform = transforms.Compose(transform)
         self.inv_transform = transforms.Compose(inv_transform)
-        self.model.to(self.device)
     def nhwc_to_nchw(self, x: torch.Tensor) -> torch.Tensor:
         if x.dim() == 4:
             x = x if x.shape[1] == 3 else x.permute(0, 3, 1, 2)
@@ -56,6 +55,7 @@ class ShapEval:
         explainer = shap.Explainer(predict, masker, output_names=self.classes)
         return explainer(X, max_evals=1000, batch_size=50, outputs=shap.Explanation.argsort.flip[:4])
     def nat_part_exp(self, images, labels):
+        self.model.to(self.device)
         images = self.transform(images)
         shap_values = self._shap_part_explain(images)
         shap_values.data = self.inv_transform(shap_values.data).cpu().numpy()
@@ -66,17 +66,32 @@ class ShapEval:
                 true_labels=labels)
     def _shap_deep_explain(self, background, X):
         ex = shap.DeepExplainer(self.model, background)
-        return ex.shap_values(X, ranked_outputs=10)
-    def nat_deep_exp(self, images_background, eval_images, labels):
-        background = images_background.to(self.device)
+        return ex.shap_values(X)
+    
+    def _shap_gradient_explain(self, background, X):
+        ex = shap.GradientExplainer(self.model, background)
+        return ex.shap_values(X, nsamples=200, ranked_outputs=1)
+    def gradient_exp(self, images_background, eval_images, labels):
+        self.model.to(self.device)
+        background = self.normalizer(images_background.to(self.device))
         test_X = eval_images.to(self.device)
         X_viz = test_X
         test_X = self.normalizer(test_X)
-        shap_values, indexes = self._shap_deep_explain(background, test_X)
-        shap_values = np.abs([np.swapaxes(np.swapaxes(s, 2, 3), 1, -1) for s in shap_values]).mean(0)
-        test_numpy = (np.swapaxes(np.swapaxes(X_viz.cpu().numpy(), 1, -1), 1, 2)  * 255).astype(np.uint8)
+        shap_values, indexes = self._shap_gradient_explain(background, test_X)
         index_names = np.vectorize(lambda x: self.classes[x])(indexes.cpu())
-        return shap.plots.image(shap_values, test_numpy, true_labels=[self.classes[i] for i in labels.cpu().numpy()], labels=index_names, show=False)
+        shap_values = [np.swapaxes(np.swapaxes(s, 2, 3), 1, -1) for s in shap_values]
+        shap.image_plot(shap_values, X_viz.cpu().numpy().transpose(0, 2, 3, 1), index_names,  true_labels=[self.classes[i] for i in labels.cpu().numpy()], show=False)
+    def nat_deep_exp(self, images_background, eval_images, labels):
+        self.model.to(self.device)
+        background = self.normalizer(images_background.to(self.device))
+        test_X = eval_images.to(self.device)
+        X_viz = test_X
+        test_X = self.normalizer(test_X)
+        shap_values = self._shap_deep_explain(background, test_X)
+        shap_values = [np.swapaxes(np.swapaxes(s, 2, 3), 1, -1) for s in shap_values]
+        test_numpy = (np.swapaxes(np.swapaxes(X_viz.cpu().numpy(), 1, -1), 1, 2)  * 255).astype(np.uint8)
+        #index_names = np.vectorize(lambda x: self.classes[x])(indexes.cpu())
+        return shap.plots.image(shap_values, test_numpy, true_labels=[self.classes[i] for i in labels.cpu().numpy()], show=False)
     def adv_deep_exp(self, background_images, backgeound_labels, eval_images, eval_labels, attack_step=L2Step, num_iter=20, epsilon=0.5):
         attacker = Attacker(self.model, num_iter=num_iter, epsilon=epsilon, attack_step=attack_step, normalizer=self.normalizer)
         background = attacker(background_images, backgeound_labels).to(self.device)

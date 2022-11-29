@@ -38,7 +38,7 @@ class IntegratedGrad:
         predictions = []
         for i in range(0, steps, batch_size):
             start = i
-            end = min(start+batch_size, steps)
+            end = min(start+batch_size, len(scaled_inputs))
             batch = scaled_inputs[start:end]
             batch = self.normalizer(batch)
             gradient, pred = self._pred_grad(batch, target_label_idx)
@@ -54,7 +54,7 @@ class IntegratedGrad:
         integrated_grads = (delta_X*integrated_grads).squeeze(0).detach().cpu().numpy()
         integrated_grads = np.transpose(integrated_grads, (1, 2, 0))
         completeness = np.abs(np.sum(integrated_grads) - (predictions[-1] - predictions[0]))
-        return integrated_grads, completeness
+        return integrated_grads, completeness, predictions
     def visualization(self, grad, image, treshold=0):
         return pil_image(Visualize(grad, (image*255).astype(np.uint8), clip_below_percentile=treshold))
     def black_baseline_integrated_grads(self, input, target_label_idx, steps=50, batch_size=30):
@@ -67,24 +67,28 @@ class IntegratedGrad:
         all_intgrads = []
         itr = tqdm(range(num_random_trials), unit="trial")
         completeness = []
+        preds = []
         for i in itr:
-            integrated_grad, cm = self._integrated_grads(input, target_label_idx, \
+            integrated_grad, cm, predictions = self._integrated_grads(input, target_label_idx, \
                                                     baseline=torch.normal(0, 0.4, input.shape).to(self.device), steps=steps, batch_size=batch_size)
+            preds.append(predictions)
             all_intgrads.append(integrated_grad)
             completeness.append(cm)
             itr.set_postfix(completeness=np.average(completeness))
         avg_intgrads = np.average(np.array(all_intgrads), axis=0)
-        return avg_intgrads
+        return avg_intgrads, preds
     def random_baseline_integrated_grads(self, input, target_label_idx, steps, num_random_trials, batch_size=30):
         input = self._to_tensor(input)
         all_intgrads = []
         itr = tqdm(range(num_random_trials), unit="trial")
         completeness = []
+        preds = []
         for i in itr:
-            integrated_grad, cm = self._integrated_grads(input, target_label_idx, \
+            integrated_grad, cm, predictions = self._integrated_grads(input, target_label_idx, \
                                                     baseline=torch.rand(input.shape).to(self.device), steps=steps, batch_size=batch_size)
+            preds.append(predictions)
             all_intgrads.append(integrated_grad)
             completeness.append(cm)
             itr.set_postfix(completeness=np.average(completeness))
         avg_intgrads = np.average(np.array(all_intgrads), axis=0)
-        return avg_intgrads
+        return avg_intgrads, preds

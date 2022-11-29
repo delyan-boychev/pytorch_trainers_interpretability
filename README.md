@@ -15,18 +15,18 @@ SmallImageNet150 dataset can be found [here](https://drive.google.com/file/d/161
 ### CIFAR10
 
 The architecture of the model which is used is ResNet18. The preturbations are generated with PGD L2 projection and epsilon 0.5.
-| **Model** | **Regular Accuracy** | **Adversarial Accuracy** | **Checkpoint** |
+| **Model** | **Standard Accuracy** | **Adversarial Accuracy** | **Checkpoint** |
 |-----------|----------------------|--------------------------|--------------------------------------------------------------------------------------------|
-| Regular | **92.7** | 0.72 | [here](https://drive.google.com/file/d/1t71KG_u-X-LCAFJ94Kg0pqNBajumEEsu/view?usp=sharing) |
+| Standard | **92.7** | 0.72 | [here](https://drive.google.com/file/d/1t71KG_u-X-LCAFJ94Kg0pqNBajumEEsu/view?usp=sharing) |
 | Robust | 85 | **64.6** | [here](https://drive.google.com/file/d/1t71KG_u-X-LCAFJ94Kg0pqNBajumEEsu/view?usp=sharing) |
 
 ### SmallImageNet150
 
 The architecture of the model which is used is ResNet50. The preturbations are generated with PGD L2 projection and epsilon 0.5.
 
-| **Model** | **Regular Accuracy** | **Adversarial Accuracy** | **Checkpoint**                                                                             |
+| **Model** | **Standard Accuracy** | **Adversarial Accuracy** | **Checkpoint**                                                                             |
 | --------- | -------------------- | ------------------------ | ------------------------------------------------------------------------------------------ |
-| Regular   | **75.9**             | 2.39                     | [here](https://drive.google.com/file/d/1zpHIJ_dPYb6-Seqtbk9YoWSItvdwU-GO/view?usp=sharing) |
+| Standard   | **75.9**             | 2.39                     | [here](https://drive.google.com/file/d/1zpHIJ_dPYb6-Seqtbk9YoWSItvdwU-GO/view?usp=sharing) |
 | Robust    | 65.5                 | **53.2**                 | [here](https://drive.google.com/file/d/1_5bKIy4n0rtbRy0YK64BUblnBqUnISMv/view?usp=sharing) |
 
 ## Examples
