@@ -1,5 +1,10 @@
 import torch
 
+"""
+Sequential with arguments, which is applied to the last layer of the Sequential module.
+"""
+
+
 class SequentialWithArgs(torch.nn.Sequential):
     def forward(self, input, *args, **kwargs):
         vs = list(self._modules.values())
