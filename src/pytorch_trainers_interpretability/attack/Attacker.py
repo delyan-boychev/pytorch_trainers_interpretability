@@ -8,7 +8,7 @@ import torch
 from tqdm import tqdm
 
 class Attacker:
-    def __init__(self, model, num_iter=20, epsilon=8/255, attack_step=AttackSteps.LinfStep, lr=0.1, criterion=None, normalizer=lambda x: x, restart=True, tqdm=True):
+    def __init__(self, model, num_iter=20, epsilon=8/255, attack_step=AttackSteps.LinfStep, lr=0.01, criterion=None, normalizer=lambda x: x, restart=False, tqdm=True):
         if not isinstance(model, nn.Module):
             raise("Not valid model")
         self.model = model
