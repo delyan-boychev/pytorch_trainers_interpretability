@@ -7,7 +7,7 @@ class AccEvaluator:
         self.model = model
         self.criterion = criterion
         self.testloader = testloader
-        self.attacker = Attacker(self.model, num_iter=adv_iter, epsilon=adv_eps, attack_step=adv_step, adv_lr=adv_lr, tqdm=False)
+        self.attacker = Attacker(self.model, num_iter=adv_iter, epsilon=adv_eps, attack_step=adv_step, lr=adv_lr, tqdm=False)
         self.normalizer = normalizer
         self.attacker.normalizer = self.normalizer
         self.device = device
