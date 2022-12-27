@@ -3,11 +3,11 @@ from tqdm import tqdm
 from ...attack import Attacker
 
 class AccEvaluator:
-    def __init__(self, model, criterion, testloader, device, adv_step, adv_iter, adv_eps, normalizer=lambda x: x):
+    def __init__(self, model, criterion, testloader, device, adv_step, adv_lr, adv_iter, adv_eps, normalizer=lambda x: x):
         self.model = model
         self.criterion = criterion
         self.testloader = testloader
-        self.attacker = Attacker(self.model, num_iter=adv_iter, epsilon=adv_eps, attack_step=adv_step, tqdm=False)
+        self.attacker = Attacker(self.model, num_iter=adv_iter, epsilon=adv_eps, attack_step=adv_step, adv_lr=adv_lr, tqdm=False)
         self.normalizer = normalizer
         self.attacker.normalizer = self.normalizer
         self.device = device

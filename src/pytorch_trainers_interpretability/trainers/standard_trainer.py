@@ -24,7 +24,7 @@ schedulers = {
 class StandardTrainer:
     def __init__(self, model="resnet18", pretrained=False, criterion=nn.CrossEntropyLoss(),
     num_classes=10, lr=0.001, epochs=100,
-    adv_step=AttackSteps.L2Step, adv_iter=20, adv_epsilon=0.5,
+    adv_step=AttackSteps.L2Step, adv_iter=20, adv_epsilon=0.5, adv_lr=0.01,
     optimizer="Adam", lr_scheduler=None, weight_decay=0.0,
     trainset=None, testset=None, batch_size=20,
     transforms_train=transforms.Compose([transforms.ToTensor()]), transforms_test=transforms.Compose([transforms.ToTensor()]),
@@ -73,7 +73,7 @@ class StandardTrainer:
             else:
                 self.scheduler = schedulers[lr_scheduler](optimizer=self.optimizer)
         self.normalizer = input_normalizer
-        self.acc_eval = AccEvaluator(model=self.model, criterion=self.criterion, device=self.device, testloader=self.testloader, adv_step=adv_step, adv_iter=adv_iter, adv_eps=adv_epsilon, normalizer=self.normalizer)
+        self.acc_eval = AccEvaluator(model=self.model, criterion=self.criterion, device=self.device, testloader=self.testloader, adv_step=adv_step, adv_lr=adv_lr, adv_iter=adv_iter, adv_eps=adv_epsilon, normalizer=self.normalizer)
         self.backward = Backward(self.model, self.criterion, self.optimizer)
         print(f"Model created on device {self.device}")
         if resume_path is not None:
