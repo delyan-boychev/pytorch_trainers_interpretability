@@ -66,7 +66,7 @@ class Bottleneck(nn.Module):
                 nn.BatchNorm2d(self.expansion*planes)
             )
 
-    def forward(self, x):
+    def forward(self, x, fake_relu=False):
         identity = x.clone()
         out = F.relu(self.bn1(self.conv1(x)))
         out = F.relu(self.bn2(self.conv2(out)))
@@ -74,6 +74,8 @@ class Bottleneck(nn.Module):
         if self.shortcut is not None:
             identity = self.shortcut(identity)
         out += identity
+        if fake_relu:
+            return FakeReLU.apply(out)
         out = F.relu(out)
         return out
 

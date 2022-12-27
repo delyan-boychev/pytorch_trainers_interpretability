@@ -20,7 +20,7 @@ class Attacker:
         self.restart = restart
         self.normalizer = normalizer
         if criterion is None:
-            self.criterion = nn.CrossEntropyLoss()
+            self.criterion = nn.CrossEntropyLoss(reduction='none')
             self.custom_loss = False
         else:
             self.criterion = criterion
@@ -29,7 +29,6 @@ class Attacker:
         model.to(self.device)
     def __call__(self, X, y, targeted=False, fake_relu=False, use_best=True, random_start=False):
         X = X.to(self.device)
-        y = y.to(self.device)
         attack_step = self.attack_step(epsilon=self.epsilon, orig_X=X.clone().detach(), lr=self.lr, device=self.device)
         m = -1 if targeted else 1
         if random_start:
@@ -46,6 +45,7 @@ class Attacker:
             if iter_no_change > 10 and self.restart is True:
                 adv_X = attack_step.random_restart(adv_X)
             adv_X = adv_X.detach().clone().requires_grad_(True)
+            loss = None
             if self.custom_loss:
                 loss = self.criterion(self.model, self.normalizer(adv_X), y)
             else:
@@ -56,16 +56,14 @@ class Attacker:
             loss = m * loss
             if self.tqdm:
                 iterat.set_postfix(loss=rn_loss/(i+1))
-            loss.backward()
-            grads = adv_X.grad.detach().clone()
-            adv_X.grad.zero_()
+            grad, = torch.autograd.grad(loss, [adv_X])
             if best_loss is None or best_loss < loss.item():
                 best_loss = loss.item()
                 best_X = adv_X.clone().detach()
                 iter_no_change = -1
             if use_best is False:
                 best_X = adv_X.clone().detach()
-            adv_X = attack_step.step(adv_X, grads)
+            adv_X = attack_step.step(adv_X, grad)
             adv_X = attack_step.project(adv_X)
             iter_no_change +=1
         return best_X

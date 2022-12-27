@@ -36,9 +36,9 @@ class IntegratedGrad:
         scaled_inputs = self._generate_staturate_batches(input, baseline, steps)
         gradients = []
         predictions = []
-        for i in range(0, steps, batch_size):
+        for i in range(0, scaled_inputs.shape[0], batch_size):
             start = i
-            end = min(start+batch_size, len(scaled_inputs))
+            end = min(start+batch_size, scaled_inputs.shape[0])
             batch = scaled_inputs[start:end]
             batch = self.normalizer(batch)
             gradient, pred = self._pred_grad(batch, target_label_idx)
