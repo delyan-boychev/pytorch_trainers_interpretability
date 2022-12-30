@@ -8,7 +8,7 @@ import torch.nn.functional as F
 import numpy as np
 import matplotlib.pylab as plt
 from tqdm import tqdm
-from ._visualization import Visualize, pil_image
+from ._visualization_intgrads import Visualize, pil_image
 
 class IntegratedGrad:
     def __init__(self, model, normalizer=lambda x: x):

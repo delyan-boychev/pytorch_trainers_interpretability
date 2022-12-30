@@ -6,6 +6,7 @@ import numpy as np
 import torch
 from ..attack import L2Step, Attacker
 import matplotlib.pyplot as plt
+from ._visualization_shap import image_plot
 
 class ShapEval:
     def __init__(self, model=None, classes=None, normalizer=lambda x: x):
@@ -80,7 +81,7 @@ class ShapEval:
         shap_values, indexes = self._shap_gradient_explain(background, test_X)
         index_names = np.vectorize(lambda x: self.classes[x])(indexes.cpu())
         shap_values = [np.swapaxes(np.swapaxes(s, 2, 3), 1, -1) for s in shap_values]
-        shap.image_plot(shap_values, X_viz.cpu().numpy().transpose(0, 2, 3, 1), index_names,  true_labels=[self.classes[i] for i in labels.cpu().numpy()], show=False)
+        image_plot(shap_values, X_viz.cpu().numpy().transpose(0, 2, 3, 1), index_names,  true_labels=[self.classes[i] for i in labels.cpu().numpy()])
     def nat_deep_exp(self, images_background, eval_images, labels):
         self.model.to(self.device)
         background = self.normalizer(images_background.to(self.device))
