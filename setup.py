@@ -11,8 +11,8 @@ setup(
     package_dir={"": "src"},
     packages=find_namespace_packages(where="src", exclude=["tests"]),
     install_requires=[
-        "torchvision>=0.13.1",
-        "torch>=1.12.1",
+        "torchvision>=0.14.1",
+        "torch>=1.13.1",
         "tqdm",
         "numpy",
         "matplotlib>=3.5.3",
