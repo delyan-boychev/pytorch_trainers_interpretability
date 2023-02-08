@@ -52,10 +52,10 @@ class ShapEval:
             img = img.to(self.device)
             output = self.model(img)
             return output
-        masker = shap.maskers.Image("blur(128, 128)", X[0].shape)
+        masker = shap.maskers.Image("inpaint", X[0].shape)
         explainer = shap.Explainer(predict, masker, output_names=self.classes)
         return explainer(X, max_evals=1000, batch_size=50, outputs=shap.Explanation.argsort.flip[:4])
-    def nat_part_exp(self, images, labels):
+    def part_exp(self, images, labels):
         self.model.to(self.device)
         images = self.transform(images)
         shap_values = self._shap_part_explain(images)
@@ -65,13 +65,11 @@ class ShapEval:
                 pixel_values=shap_values.data,
                 labels=shap_values.output_names,
                 true_labels=labels)
-    def _shap_deep_explain(self, background, X):
-        ex = shap.DeepExplainer(self.model, background)
-        return ex.shap_values(X)
-    
+
     def _shap_gradient_explain(self, background, X):
         ex = shap.GradientExplainer(self.model, background)
         return ex.shap_values(X, nsamples=200, ranked_outputs=1)
+    # SHAP Gradient Explainer with custom plot
     def gradient_exp(self, images_background, eval_images, labels):
         self.model.to(self.device)
         background = self.normalizer(images_background.to(self.device))
@@ -82,25 +80,3 @@ class ShapEval:
         index_names = np.vectorize(lambda x: self.classes[x])(indexes.cpu())
         shap_values = [np.swapaxes(np.swapaxes(s, 2, 3), 1, -1) for s in shap_values]
         image_plot(shap_values, X_viz.cpu().numpy().transpose(0, 2, 3, 1), index_names,  true_labels=[self.classes[i] for i in labels.cpu().numpy()])
-    def nat_deep_exp(self, images_background, eval_images, labels):
-        self.model.to(self.device)
-        background = self.normalizer(images_background.to(self.device))
-        test_X = eval_images.to(self.device)
-        X_viz = test_X
-        test_X = self.normalizer(test_X)
-        shap_values = self._shap_deep_explain(background, test_X)
-        shap_values = [np.swapaxes(np.swapaxes(s, 2, 3), 1, -1) for s in shap_values]
-        test_numpy = (np.swapaxes(np.swapaxes(X_viz.cpu().numpy(), 1, -1), 1, 2)  * 255).astype(np.uint8)
-        #index_names = np.vectorize(lambda x: self.classes[x])(indexes.cpu())
-        return shap.plots.image(shap_values, test_numpy, true_labels=[self.classes[i] for i in labels.cpu().numpy()], show=False)
-    def adv_deep_exp(self, background_images, backgeound_labels, eval_images, eval_labels, attack_step=L2Step, num_iter=20, epsilon=0.5):
-        attacker = Attacker(self.model, num_iter=num_iter, epsilon=epsilon, attack_step=attack_step, normalizer=self.normalizer)
-        background = attacker(background_images, backgeound_labels).to(self.device)
-        test_X = attacker(eval_images, eval_labels).cpu()
-        X_viz = test_X
-        test_X = self.normalizer(test_X)
-        shap_values, indexes = self._shap_deep_explain(background, test_X)
-        shap_values = [np.swapaxes(np.swapaxes(s, 2, 3), 1, -1) for s in shap_values]
-        test_numpy = (np.swapaxes(np.swapaxes(X_viz.cpu().numpy(), 1, -1), 1, 2)  * 255).astype(np.uint8)
-        index_names = np.vectorize(lambda x: self.classes[x])(indexes.cpu())
-        return shap.plots.image(shap_values, test_numpy, true_labels=[self.classes[i] for i in eval_labels.cpu().numpy()], labels=index_names, show=False)
