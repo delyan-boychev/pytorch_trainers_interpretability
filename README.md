@@ -2,7 +2,7 @@
 
 _(Increasing Computer Vision Models Interpretability)_
 
-Contact: delyan.boychev05@gmail.com 
+Contact: delyan.boychev05@gmail.com
 
 With the perpetual increase of complexity of the state-of-the-art deep neural networks, it becomes more
 and more challenging to maintain their transparency. The scope of this work is to evaluate the effects
@@ -20,21 +20,23 @@ SmallImageNet150 dataset can be found [here](https://drive.google.com/file/d/161
 
 ### CIFAR10
 
-The architecture of the model which is used is ResNet18. The models are evalutated on $l_2$ (constraint $\varepsilon = 0.5$ and step size $\sigma = 0.1$) and $l_{\infty}$  (constraint $\varepsilon = 4/255$ and step size $\sigma = 0.01$) adversaries generated with PGD.
-| **Model**                         | **Standard Accuracy** | **$l_{2}$ Accuracy** | **$l_{\infty}$ Accuracy** | **Average Accuracy** | **Checkpoint**                                                                                |
-|-----------------------------------|-----------------------|----------------------|---------------------------|----------------------|-----------------------------------------------------------------------------------------------|
-| Standard model                    | **93.2**              | 0.36                 | 0.13                      | 31.23                | [here](https://drive.google.com/file/d/1--6YSHDUNcwXvnjUgjdOcV_A3bMcHEbD/view?usp=sharing)    |
-| Robust $l_{2}$ trained model      | 85                    | **64.6**             | 59.2                      | **69.6**             | [here](https://drive.google.com/file/d/1OcvlvVlsC1oMIzZedvf3Zh6Q10kKzoyN/view?usp=sharing)    |
-| Robust $l_{\infty}$ trained model | 80.4                  | 60.4                 | **65.1**                  | 68.63                | [here](https://drive.google.com/file/d/1_tI8peJe2hD037CgEzCh2k_wiFpH8tPe/view?usp=share_link) |
+The architecture of the model which is used is ResNet18. The models are evalutated on $l_2$ (constraint $\varepsilon = 0.5$ and step size $\sigma = 0.1$) and $l_{\infty}$ (constraint $\varepsilon = 4/255$ and step size $\sigma = 0.01$) adversaries generated with PGD.
+| **Model** | **Standard Accuracy** | **$l_{2}$ Accuracy** | **$l_{\infty}$ Accuracy** | **Checkpoint** |
+|-----------------------------------|-----------------------|----------------------|---------------------------|-----------------------------------------------------------------------------------------------|
+| Standard model | **93.2** | 0.36 | 0.13 | [here](https://drive.google.com/file/d/1--6YSHDUNcwXvnjUgjdOcV_A3bMcHEbD/view?usp=sharing) |
+| Robust $l_{2}$ trained model | 85 | **64.6** | 59.2 | [here](https://drive.google.com/file/d/1OcvlvVlsC1oMIzZedvf3Zh6Q10kKzoyN/view?usp=sharing) |
+| Robust $l_{\infty}$ trained model | 80.4 | 60.4 | **65.1** | [here](https://drive.google.com/file/d/1_tI8peJe2hD037CgEzCh2k_wiFpH8tPe/view?usp=share_link) |
+
 ### SmallImageNet150
 
-The architecture of the model which is used is ResNet50. The models are evalutated on $l_2$ (constraint $\varepsilon = 0.5$ and step size $\sigma = 0.1$) and $l_{\infty}$  (constraint $\varepsilon = 4/255$ and step size $\sigma = 0.1$) adversaries generated with PGD.
+The architecture of the model which is used is ResNet50. The models are evalutated on $l_2$ (constraint $\varepsilon = 0.5$ and step size $\sigma = 0.1$) and $l_{\infty}$ (constraint $\varepsilon = 4/255$ and step size $\sigma = 0.1$) adversaries generated with PGD.
 
-| **Model**                         | **Standard Accuracy** | **$l_{2}$ Accuracy** | **$l_{\infty}$ Accuracy** | **Average Accuracy** | **Checkpoint**                                                                             |
-|-----------------------------------|-----------------------|----------------------|---------------------------|----------------------|--------------------------------------------------------------------------------------------|
-| Standard model                    | **75.9**              | 2.09                 | 0                         | 26                   | [here](https://drive.google.com/file/d/1zpHIJ_dPYb6-Seqtbk9YoWSItvdwU-GO/view?usp=sharing) |
-| Robust $l_{2}$ trained model      | 65.4                  | **53.2**             | 12.7                      | 43.77                | [here](https://drive.google.com/file/d/1_5bKIy4n0rtbRy0YK64BUblnBqUnISMv/view?usp=sharing) |
-| Robust $l_{\infty}$ trained model | 60                    | 43.9                 | **32**                    | **45.3**             | [here](https://drive.google.com/file/d/12O5HxjqcSzjt9-mGfapYeZ-nOfsMopIM/view?usp=sharing) |
+| **Model**                         | **Standard Accuracy** | **$l_{2}$ Accuracy** | **$l_{\infty}$ Accuracy** | **Checkpoint**                                                                             |
+| --------------------------------- | --------------------- | -------------------- | ------------------------- | ------------------------------------------------------------------------------------------ |
+| Standard model                    | **75.9**              | 2.09                 | 0                         | [here](https://drive.google.com/file/d/1zpHIJ_dPYb6-Seqtbk9YoWSItvdwU-GO/view?usp=sharing) |
+| Robust $l_{2}$ trained model      | 65.4                  | **53.2**             | 12.7                      | [here](https://drive.google.com/file/d/1_5bKIy4n0rtbRy0YK64BUblnBqUnISMv/view?usp=sharing) |
+| Robust $l_{\infty}$ trained model | 60                    | 43.9                 | **32**                    | [here](https://drive.google.com/file/d/12O5HxjqcSzjt9-mGfapYeZ-nOfsMopIM/view?usp=sharing) |
+
 ## Examples
 
 | **Dataset**      | **Training**                                 | **Interpretability**                                    |
