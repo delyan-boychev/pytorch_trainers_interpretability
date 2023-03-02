@@ -36,3 +36,17 @@ The architecture of the model which is used is ResNet50. The models are evalutat
 | ------------------ | -------------------------------------------- | ------------------------------------------------------- |
 | CIFAR10            | [here](./examples/cifar10_train.ipynb)       | [here](./examples/cifar10_interpretability.ipynb)       |
 | Small ImageNet 150 | [here](./examples/smallimagenet_train.ipynb) | [here](./examples/smallimagenet_interpretability.ipynb) |
+
+## CIFAR-10 Models Training
+
+![](https://github.com/delyan-boychev/pytorch_trainers_interpretability/blob/master/images/cifar10/training/standard_acc.png?raw=true)
+![](https://github.com/delyan-boychev/pytorch_trainers_interpretability/blob/master/images/cifar10/training/standard_loss.png?raw=true)
+![](https://github.com/delyan-boychev/pytorch_trainers_interpretability/blob/master/images/cifar10/training/robust_acc.png?raw=true)
+![](https://github.com/delyan-boychev/pytorch_trainers_interpretability/blob/master/images/cifar10/training/robust_loss.png?raw=true)
+
+## Small ImageNet 150 Models Training
+
+![](https://github.com/delyan-boychev/pytorch_trainers_interpretability/blob/master/images/smimagenet/training/standard_acc.png?raw=true)
+![](https://github.com/delyan-boychev/pytorch_trainers_interpretability/blob/master/images/smimagenet/training/standard_loss.png?raw=true)
+![](https://github.com/delyan-boychev/pytorch_trainers_interpretability/blob/master/images/smimagenet/training/robust_acc.png?raw=true)
+![](https://github.com/delyan-boychev/pytorch_trainers_interpretability/blob/master/images/smimagenet/training/robust_loss.png?raw=true)
