@@ -18,12 +18,10 @@ class RepVisualization:
                 "Orginal images shape must be equal to the source ones")
         orig_images = orig_images.to(self.device)
         source_images = source_images.to(self.device)
-        # setting up parameters for PGD
         self.att.epsilon = 1000
         self.att.num_iter = 10000
         self.att.attack_step = L2Step
         self.att.lr = 1
-        # inversion loss function to minimize the l2 distance between the rep vectors
 
         def inversion_loss(m, inp, t):
             _, rep = m(inp, with_latent=True, fake_relu=True)
@@ -38,7 +36,6 @@ class RepVisualization:
         return xadv
 
     def feature_vis(self, source_images, activations):
-        # setting up settings for
         self.att.epsilon = 1000
         self.att.num_iter = 200
         self.att.attack_step = L2Step
