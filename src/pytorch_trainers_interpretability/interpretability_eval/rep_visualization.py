@@ -90,11 +90,11 @@ class RepVisualization:
         img_min = self._get_topk_imgs(actv, dist=dist2)
         return img_source.cpu(), vis.cpu(), img_max.cpu(), img_min.cpu()
 
-    def class_im_gen(self, source_images, class_idx, tqdm=True):
-        self.att.epsilon = 10000
-        self.att.num_iter = 400
+    def class_im_gen(self, source_images, class_idx, tqdm=True, num_iter=400, epsilon=1000, lr=1):
+        self.att.epsilon = epsilon
+        self.att.num_iter = num_iter
         self.att.attack_step = L2Step
-        self.att.lr = 1
+        self.att.lr = lr
         self.att.tqdm = tqdm
 
         def class_loss(m, inp, t):
