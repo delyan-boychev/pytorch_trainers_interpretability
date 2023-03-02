@@ -1,4 +1,8 @@
 __pycache__/
-/data
+data
 dist
 *.egg-info
+*.pt
+*.json
+*.tar.gz
+smallimagenet
