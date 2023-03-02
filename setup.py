@@ -19,6 +19,7 @@ setup(
         "timm",
         "shap",
         "lime",
+        "seaborn",
         "scikit-image"
     ],
 )
