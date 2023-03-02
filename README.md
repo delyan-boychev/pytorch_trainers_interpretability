@@ -4,13 +4,8 @@ _(Increasing Computer Vision Models Interpretability)_
 
 Contact: delyan.boychev05@gmail.com
 
-With the perpetual increase of complexity of the state-of-the-art deep neural networks, it becomes more
-and more challenging to maintain their transparency. The scope of this work is to evaluate the effects
-of the method called adversarial training which has been shown to make computer vision models more
-explainable, but also make them robust, both important features of the models when we deploy them to
-the real world. We study the impacts of adversarial training on the interpretability of the model using
-techniques like Integrated Gradients, SHAP, Feature Visualization, Representations Inversion and one
-new method called Class Specific Image Generation and compare models’ respective performances.
+With the perpetual increase of complexity of the state-of-the-art deep neural networks, it becomes more and more challenging to maintain their transparency. Our work aims to evaluate the effects of adversarial training utilized to produce robust models. Moreover, it has been shown to make computer vision models more explainable. Interpretability is as essential as robustness when we deploy the models to the real world. To prove there is a correlation between these two problems as well as determine the quality of the learned representations, we extensively examine the models using local feature-importance methods (SHAP, Integrated Gradients) and feature visualization techniques (Representation Inversion, Class Specific Image Generation).
+Standard models, compared to robust ones are less secure, and their learned representations are less meaningful to humans. Controversially, robust models focus on distinctive regions of the images which support their predictions.
 
 ## Small ImageNet 150
 
