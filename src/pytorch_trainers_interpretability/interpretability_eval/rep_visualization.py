@@ -104,5 +104,5 @@ class RepVisualization:
         self.att.criterion = class_loss
         self.att.custom_loss = True
         class_idx = torch.tensor([class_idx])
-        xadv = self.att(source_images, class_idx, use_best=False)
+        xadv = self.att(source_images, class_idx, use_best=True)
         return xadv

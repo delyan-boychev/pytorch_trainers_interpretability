@@ -54,8 +54,6 @@ class Attacker:
             loss = torch.mean(loss)
             rn_loss += loss.item()
             loss = m * loss
-            if self.tqdm:
-                iterat.set_postfix(loss=rn_loss/(i+1))
             grad, = torch.autograd.grad(loss, [adv_X])
             if best_loss is None or best_loss < loss.item():
                 best_loss = loss.item()
@@ -63,6 +61,8 @@ class Attacker:
                 iter_no_change = -1
             if use_best is False:
                 best_X = adv_X.clone().detach()
+            if self.tqdm:
+                iterat.set_postfix(loss=m*best_loss)
             adv_X = attack_step.step(adv_X, grad)
             adv_X = attack_step.project(adv_X)
             iter_no_change +=1
