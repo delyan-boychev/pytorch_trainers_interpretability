@@ -62,10 +62,12 @@ class IntegratedGrad:
         baseline = torch.zeros(input.shape).to(self.device)
         integrated_grad, cm = self._integrated_grads(input, target_label_idx, baseline, steps, batch_size)
         return integrated_grad
-    def gaussian_noise_integrated_grads(self, input, target_label_idx, steps, num_random_trials, batch_size=30):
+    def gaussian_noise_integrated_grads(self, input, target_label_idx, steps, num_random_trials, batch_size=30, tqdm_p=True):
         input = self._to_tensor(input)
         all_intgrads = []
-        itr = tqdm(range(num_random_trials), unit="trial")
+        itr = range(num_random_trials)
+        if tqdm_p == True:
+            itr = tqdm(itr, unit="trial")
         completeness = []
         preds = []
         for i in itr:
@@ -74,13 +76,16 @@ class IntegratedGrad:
             preds.append(predictions)
             all_intgrads.append(integrated_grad)
             completeness.append(cm)
-            itr.set_postfix(completeness=np.average(completeness))
+            if tqdm_p:
+                itr.set_postfix(completeness=np.average(completeness))
         avg_intgrads = np.average(np.array(all_intgrads), axis=0)
         return avg_intgrads, preds
-    def random_baseline_integrated_grads(self, input, target_label_idx, steps, num_random_trials, batch_size=30):
+    def random_baseline_integrated_grads(self, input, target_label_idx, steps, num_random_trials, batch_size=30, tqdm_p=True):
         input = self._to_tensor(input)
         all_intgrads = []
-        itr = tqdm(range(num_random_trials), unit="trial")
+        itr = range(num_random_trials)
+        if tqdm_p == True:
+            itr = tqdm(itr, unit="trial")
         completeness = []
         preds = []
         for i in itr:
@@ -89,6 +94,7 @@ class IntegratedGrad:
             preds.append(predictions)
             all_intgrads.append(integrated_grad)
             completeness.append(cm)
-            itr.set_postfix(completeness=np.average(completeness))
+            if tqdm_p:
+                itr.set_postfix(completeness=np.average(completeness))
         avg_intgrads = np.average(np.array(all_intgrads), axis=0)
         return avg_intgrads, preds
