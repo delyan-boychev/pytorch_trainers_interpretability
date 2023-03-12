@@ -6,7 +6,8 @@ import numpy as np
 import torch
 from ..attack import L2Step, Attacker
 import matplotlib.pyplot as plt
-from ._visualization_shap import image_plot
+from ._visualization_shap import image_plot, image_plot_single
+from ..models import BatchPredictor
 
 class ShapEval:
     def __init__(self, model=None, classes=None, normalizer=lambda x: x):
@@ -65,18 +66,27 @@ class ShapEval:
                 pixel_values=shap_values.data,
                 labels=shap_values.output_names,
                 true_labels=labels)
-
-    def _shap_gradient_explain(self, background, X):
-        ex = shap.GradientExplainer(self.model, background)
-        return ex.shap_values(X, nsamples=200, ranked_outputs=1)
-    # SHAP Gradient Explainer with custom plot
-    def gradient_exp(self, images_background, eval_images, labels):
+    def set_shap_gradient_explainer(self, background, batch_size=10):
+        self.grad_ex = shap.GradientExplainer(BatchPredictor(self.model, batch_size), background, batch_size=batch_size)
+    def _shap_gradient_explain(self, X):
+        return self.grad_ex.shap_values(X, ranked_outputs=1)
+    def gradient_exp_one(self, image):
+        self.model.to(self.device)
+        test_X = image.to(self.device)
+        X_viz = test_X
+        test_X = self.normalizer(test_X)
+        shap_values, indexes = self._shap_gradient_explain(test_X)
+        shap_values = [np.swapaxes(np.swapaxes(s, 2, 3), 1, -1) for s in shap_values]
+        return image_plot_single(shap_values, X_viz.cpu().numpy().transpose(0, 2, 3, 1))
+    
+    def gradient_exp(self, images_background, eval_images, labels, batch_size=10):
         self.model.to(self.device)
         background = self.normalizer(images_background.to(self.device))
         test_X = eval_images.to(self.device)
         X_viz = test_X
         test_X = self.normalizer(test_X)
-        shap_values, indexes = self._shap_gradient_explain(background, test_X)
+        self.set_shap_gradient_explainer(background, batch_size=batch_size)
+        shap_values, indexes = self._shap_gradient_explain(test_X)
         index_names = np.vectorize(lambda x: self.classes[x])(indexes.cpu())
         shap_values = [np.swapaxes(np.swapaxes(s, 2, 3), 1, -1) for s in shap_values]
         image_plot(shap_values, X_viz.cpu().numpy().transpose(0, 2, 3, 1), index_names,  true_labels=[self.classes[i] for i in labels.cpu().numpy()])
