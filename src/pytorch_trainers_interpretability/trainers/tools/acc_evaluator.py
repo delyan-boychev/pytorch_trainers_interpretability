@@ -2,15 +2,18 @@ import torch
 from tqdm import tqdm
 from ...attack import Attacker
 
+
 class AccEvaluator:
     def __init__(self, model, criterion, testloader, device, adv_step, adv_lr, adv_iter, adv_eps, normalizer=lambda x: x):
         self.model = model
         self.criterion = criterion
         self.testloader = testloader
-        self.attacker = Attacker(self.model, num_iter=adv_iter, epsilon=adv_eps, attack_step=adv_step, lr=adv_lr, tqdm=False)
+        self.attacker = Attacker(self.model, num_iter=adv_iter,
+                                 epsilon=adv_eps, attack_step=adv_step, lr=adv_lr, tqdm=False)
         self.normalizer = normalizer
         self.attacker.normalizer = self.normalizer
         self.device = device
+
     def accuracy(self, output, target, topk=(1,)):
         with torch.no_grad():
             maxk = max(topk)
@@ -21,9 +24,11 @@ class AccEvaluator:
 
             res = []
             for k in topk:
-                correct_k = correct[:k].reshape(-1).float().sum(0, keepdim=True)
+                correct_k = correct[:k].reshape(-1).float().sum(0,
+                                                                keepdim=True)
                 res.append(correct_k.mul_(100 / batch_size).item())
             return res
+
     def eval_nat(self):
         self.model.eval()
         accuracy_top1 = 0.0
@@ -45,8 +50,10 @@ class AccEvaluator:
                     accuracy_top2 += accs[1]
                     accuracy_top5 += accs[2]
                     running_loss += loss.item()
-                    tepoch.set_postfix(loss=(running_loss/(b+1)), accuracy_top1=accuracy_top1/(b+1), accuracy_top2=accuracy_top2/(b+1), accuracy_top5=accuracy_top5/(b+1))
+                    tepoch.set_postfix(loss=(running_loss/(b+1)), accuracy_top1=accuracy_top1/(
+                        b+1), accuracy_top2=accuracy_top2/(b+1), accuracy_top5=accuracy_top5/(b+1))
         return (accuracy_top1/(b+1)), (running_loss/(b+1))
+
     def eval_adv(self):
         self.model.eval()
         accuracy_top1 = 0.0
@@ -68,6 +75,6 @@ class AccEvaluator:
                 accuracy_top2 += accs[1]
                 accuracy_top5 += accs[2]
                 running_loss += loss.item()
-                tepoch.set_postfix(loss=(running_loss/(b+1)), accuracy_top1=accuracy_top1/(b+1), accuracy_top2=accuracy_top2/(b+1), accuracy_top5=accuracy_top5/(b+1))
+                tepoch.set_postfix(loss=(running_loss/(b+1)), accuracy_top1=accuracy_top1/(
+                    b+1), accuracy_top2=accuracy_top2/(b+1), accuracy_top5=accuracy_top5/(b+1))
         return (accuracy_top1/(b+1)), (running_loss/(b+1))
-    
