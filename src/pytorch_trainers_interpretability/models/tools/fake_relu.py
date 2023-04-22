@@ -9,8 +9,8 @@ We want not to have zero gradients because we analyze the activations.
 
 class FakeReLU(torch.autograd.Function):
     @staticmethod
-    def forward(ctx, input):
-        return input.clamp(min=0)
+    def forward(ctx, inp):
+        return inp.clamp(min=0)
 
     @staticmethod
     def backward(ctx, grad_outputs):

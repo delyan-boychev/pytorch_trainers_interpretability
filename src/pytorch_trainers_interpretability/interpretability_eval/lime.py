@@ -18,10 +18,10 @@ class LimeEval:
             'cuda' if torch.cuda.is_available() else 'cpu')
         self.model.to(self.device)
 
-    def _predict(self, input):
+    def _predict(self, inp):
         self.model.eval()
         batch = torch.stack(tuple(self.normalizer(
-            transforms.ToTensor()(i.astype(np.float32))) for i in input), dim=0)
+            transforms.ToTensor()(i.astype(np.float32))) for i in inp), dim=0)
         batch = batch.to(self.device)
         logits = self.model(batch)
         probs = nn.functional.softmax(logits, dim=1)
