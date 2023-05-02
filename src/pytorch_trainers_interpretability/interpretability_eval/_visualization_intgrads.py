@@ -187,6 +187,7 @@ def Outlines(attributions, percentage=90,
 
 
 def Overlay(attributions, image):
+    image = np.expand_dims(ConvertToGrayscale(image), 2) * [1, 1, 1]
     return np.clip(0.2 * image + attributions, 0, 255)
 
 
@@ -202,7 +203,7 @@ def pil_image(x):
     return PIL.Image.fromarray(x)
 
 
-G = [0, 255, 0]
+G = [0, 255, 38]
 R = [255, 0, 0]
 
 
