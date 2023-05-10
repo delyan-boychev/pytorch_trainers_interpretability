@@ -6,7 +6,7 @@ https://github.com/ankurtaly/Integrated-Gradients
 import matplotlib.pyplot as plt
 import numpy as np
 import PIL.Image
-
+import io
 from io import StringIO
 from scipy import ndimage
 
@@ -188,7 +188,16 @@ def Outlines(attributions, percentage=90,
 
 def Overlay(attributions, image):
     image = np.expand_dims(ConvertToGrayscale(image), 2) * [1, 1, 1]
-    return np.clip(0.2 * image + attributions, 0, 255)
+    plt.imshow(np.clip(0, 255, attributions).astype(np.uint8))
+    plt.imshow(np.clip(0, 255, image).astype(np.uint8), alpha=0.15)
+    plt.tight_layout()
+    plt.axis('off')
+    buf = io.BytesIO()
+    a = plt.savefig(buf, bbox_inches='tight')
+    buf.seek(0)
+    plt.close()
+    pil1 = PIL.Image.open(buf)
+    return pil1
 
 
 def pil_image(x):

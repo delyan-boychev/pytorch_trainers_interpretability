@@ -66,7 +66,7 @@ class IntegratedGrad:
         return integrated_grads, completeness, predictions
 
     def visualization(self, grad, image, treshold=0):
-        return pil_image(Visualize(grad, (image*255).astype(np.uint8), clip_below_percentile=treshold))
+        return Visualize(grad, (image*255).astype(np.uint8), clip_below_percentile=treshold)
 
     def black_baseline_integrated_grads(self, inp, target_label_idx, steps=50, batch_size=30):
         inp = self._to_tensor(inp)
