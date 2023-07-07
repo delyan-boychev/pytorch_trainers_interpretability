@@ -50,3 +50,15 @@ The architecture of the model which is used is ResNet50. The models are evalutat
 ![](https://github.com/delyan-boychev/pytorch_trainers_interpretability/blob/master/images/smimagenet/training/standard_loss.png?raw=true)
 ![](https://github.com/delyan-boychev/pytorch_trainers_interpretability/blob/master/images/smimagenet/training/robust_acc.png?raw=true)
 ![](https://github.com/delyan-boychev/pytorch_trainers_interpretability/blob/master/images/smimagenet/training/robust_loss.png?raw=true)
+
+## Citation
+```bibtex
+@misc{boychev2023interpretable,
+      title={Interpretable Computer Vision Models through Adversarial Training: Unveiling the Robustness-Interpretability Connection}, 
+      author={Delyan Boychev},
+      year={2023},
+      eprint={2307.02500},
+      archivePrefix={arXiv},
+      primaryClass={cs.CV}
+}
+```
