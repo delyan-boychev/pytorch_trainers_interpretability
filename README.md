@@ -1,6 +1,6 @@
 # Pytorch Trainers and Interpretability Evaluators
 
-_(Increasing Computer Vision Models Interpretability)_
+_(Interpretable Computer Vision Models through Adversarial Training: Unveiling the Robustness-Interpretability Connection)_
 
 Contact: delyan.boychev05@gmail.com
 
